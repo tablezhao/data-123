@@ -18,11 +18,6 @@
       "dest": "/index.html"
     }
   ],
-  "functions": {
-    "api/**/*.{js,ts}": {
-      "memory": 1024
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
