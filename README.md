@@ -1,52 +1,52 @@
+# 数据合规123导航网站
+
 ## 介绍
 
-项目介绍
+数据合规123导航网站是一个专业的网址导航平台，为用户提供快速、稳定访问各类数据合规和隐私保护常用网站的门户服务。
 
-## 目录结构
+### 主要功能
 
-```
-├── README.md # 说明文档
-├── components.json # 组件库配置
-├── eslint.config.js # eslint 配置
-├── index.html # 入口文件
-├── package.json # 包管理
-├── postcss.config.js # postcss 配置
-├── public # 静态资源目录
-│   ├── favicon.png # 图标
-│   └── images # 图片资源
-├── src # 源码目录
-│   ├── App.tsx # 入口文件
-│   ├── components # 组件目录
-│   ├── context # 上下文目录
-│   ├── db # 数据库配置目录
-│   ├── hooks # 通用钩子函数目录
-│   ├── index.css # 全局样式
-│   ├── layout # 布局目录
-│   ├── lib # 工具库目录
-│   ├── main.tsx # 入口文件
-│   ├── routes.tsx # 路由配置
-│   ├── pages # 页面目录
-│   ├── services  # 数据库交互目录
-│   ├── types   # 类型定义目录
-├── tsconfig.app.json  # ts 前端配置文件
-├── tsconfig.json # ts 配置文件
-├── tsconfig.node.json # ts node端配置文件
-└── vite.config.ts # vite 配置文件
-```
+#### 前端导航功能
+- ✅ 清晰的分类导航栏，支持多级分类展示
+- ✅ 热门网站推荐区，根据点击量排序
+- ✅ 全局搜索功能，支持按网站名称或描述快速检索
+- ✅ 用户收藏功能，方便快速访问常用网站
+- ✅ 深色/浅色主题切换
+- ✅ 全面响应式设计，适配手机、平板、桌面等设备
+
+#### 管理后台功能
+- ✅ 用户权限管理（管理员/普通用户）
+- ✅ 网站分类的CRUD管理
+- ✅ 导航链接的精细化CRUD管理
+- ✅ 图片上传功能（支持自动压缩）
+- ✅ 批量操作功能
+- ✅ 系统配置管理
+- ✅ 访问统计数据查看
+
+### 技术特点
+
+- 🎨 专业的数据合规主题色彩系统
+- 🔐 完整的用户认证和权限控制
+- 📱 响应式设计，完美适配各种设备
+- 🚀 基于Supabase的高性能后端
+- 🎯 第一个注册用户自动成为管理员
 
 ## 技术栈
 
-Vite、TypeScript、React、Supabase
+- **前端框架**: React 18 + TypeScript
+- **构建工具**: Vite
+- **UI组件库**: shadcn/ui + Radix UI
+- **样式方案**: Tailwind CSS
+- **状态管理**: React Context + Hooks
+- **路由管理**: React Router v7
+- **后端服务**: Supabase (PostgreSQL + Auth + Storage)
+- **主题管理**: next-themes
 
 ## 本地开发
 
-### 如何在本地编辑代码？
-
-您可以选择 [VSCode](https://code.visualstudio.com/Download) 或者您常用的任何 IDE 编辑器，唯一的要求是安装 Node.js 和 npm.
-
 ### 环境要求
 
-```
+```bash
 # Node.js ≥ 20
 # npm ≥ 10
 例如：
@@ -54,46 +54,88 @@ Vite、TypeScript、React、Supabase
 # npm -v    # 10.8.2
 ```
 
-具体安装步骤如下：
+### 快速开始
 
-### 在 Windows 上安装 Node.js
-
-```
-# Step 1: 访问Node.js官网：https://nodejs.org/，点击下载后，会根据你的系统自动选择合适的版本（32位或64位）。
-# Step 2: 运行安装程序：下载完成后，双击运行安装程序。
-# Step 3: 完成安装：按照安装向导完成安装过程。
-# Step 4: 验证安装：在命令提示符（cmd）或IDE终端（terminal）中输入 node -v 和 npm -v 来检查 Node.js 和 npm 是否正确安装。
-```
-
-### 在 macOS 上安装 Node.js
-
-```
-# Step 1: 使用Homebrew安装（推荐方法）：打开终端。输入命令brew install node并回车。如果尚未安装Homebrew，需要先安装Homebrew，
-可以通过在终端中运行如下命令来安装：
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-或者使用官网安装程序：访问Node.js官网。下载macOS的.pkg安装包。打开下载的.pkg文件，按照提示完成安装。
-# Step 2: 验证安装：在命令提示符（cmd）或IDE终端（terminal）中输入 node -v 和 npm -v 来检查 Node.js 和 npm 是否正确安装。
-```
-
-### 安装完后按照如下步骤操作：
-
-```
+```bash
 # Step 1: 下载代码包
 # Step 2: 解压代码包
 # Step 3: 用IDE打开代码包，进入代码目录
-# Step 4: IDE终端输入命令行，安装依赖：npm i
-# Step 5: IDE终端输入命令行，启动开发服务器：npm run dev -- --host 127.0.0.1
+# Step 4: 安装依赖
+npm i
+
+# Step 5: 启动开发服务器
+npm run dev -- --host 127.0.0.1
 ```
 
-### 如何开发后端服务？
+## 使用说明
 
-配置环境变量，安装相关依赖
-如需使用数据库，请使用 supabase 官方版本或自行部署开源版本的 Supabase
+### 用户注册和登录
 
-### 如何配置应用中的三方 API？
+1. 访问网站首页，点击右上角"登录"按钮
+2. 在登录页面选择"注册"标签
+3. 输入用户名和密码（用户名只能包含字母、数字和下划线）
+4. **重要**: 第一个注册的用户将自动成为管理员
 
-具体三方 API 调用方法，请参考帮助文档：[源码导出](https://cloud.baidu.com/doc/MIAODA/s/Xmewgmsq7)，了解更多详细内容。
+### 普通用户功能
+
+- 浏览所有可见的网站分类和链接
+- 使用搜索功能快速查找网站
+- 收藏喜欢的网站到"我的收藏"
+- 切换深色/浅色主题
+
+### 管理员功能
+
+管理员登录后，可以在右上角用户菜单中看到"管理后台"入口。
+
+#### 分类管理
+- 创建、编辑、删除分类
+- 设置分类图标（支持Emoji）
+- 调整分类排序
+- 控制分类可见性
+
+#### 网站管理
+- 添加、编辑、删除网站链接
+- 上传网站Logo和Favicon（支持自动压缩）
+- 设置热门推荐
+- 批量删除网站
+- 控制网站可见性
+
+#### 用户管理
+- 查看所有注册用户
+- 修改用户角色（普通用户/管理员）
+
+#### 系统配置
+- 修改网站名称和描述
+- 设置网站关键词
+- 自定义页脚文本
+
+### 图片上传说明
+
+- 支持格式：JPEG、PNG、GIF、WEBP、AVIF
+- 文件大小限制：1MB
+- 超过1MB的图片会自动压缩至1MB以下
+- 压缩策略：转换为WEBP格式，限制最大分辨率1080p
+
+## 安全特性
+
+- ✅ 基于Supabase Auth的用户认证
+- ✅ 行级安全策略（RLS）保护数据
+- ✅ 管理员权限控制
+- ✅ 图片上传安全验证
+- ✅ SQL注入防护
+
+## 性能优化
+
+- ✅ 数据库索引优化
+- ✅ 图片自动压缩
+- ✅ 响应式图片加载
+- ✅ 组件懒加载
+- ✅ 缓存策略
 
 ## 了解更多
 
 您也可以查看帮助文档：[源码导出](https://cloud.baidu.com/doc/MIAODA/s/Xmewgmsq7)，了解更多详细内容。
+
+## 许可证
+
+© 2025 数据合规123导航. All rights reserved.

@@ -1,4 +1,8 @@
-import SamplePage from './pages/SamplePage';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import FavoritesPage from './pages/FavoritesPage';
+import AdminPage from './pages/AdminPage';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import type { ReactNode } from 'react';
 
 interface RouteConfig {
@@ -10,10 +14,33 @@ interface RouteConfig {
 
 const routes: RouteConfig[] = [
   {
-    name: 'Sample Page',
+    name: '首页',
     path: '/',
-    element: <SamplePage />
-  }
+    element: <HomePage />,
+  },
+  {
+    name: '登录',
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
+    name: '我的收藏',
+    path: '/favorites',
+    element: (
+      <ProtectedRoute>
+        <FavoritesPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    name: '管理后台',
+    path: '/admin',
+    element: (
+      <ProtectedRoute requireAdmin>
+        <AdminPage />
+      </ProtectedRoute>
+    ),
+  },
 ];
 
 export default routes;
