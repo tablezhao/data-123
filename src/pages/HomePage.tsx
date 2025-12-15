@@ -12,6 +12,7 @@ import {
   recordVisit,
 } from '@/db/api';
 import { useAuthStore } from '@/stores/authStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 import type { Category, Website } from '@/types';
 
 // 导入新创建的组件
@@ -20,6 +21,7 @@ import { Footer } from '@/components/common/Footer';
 import { SearchBar } from '@/components/common/SearchBar';
 import { FeaturedWebsites } from '@/components/common/FeaturedWebsites';
 import { CategoryWebsites } from '@/components/common/CategoryWebsites';
+import PageMeta from '@/components/common/PageMeta';
 
 export default function HomePage() {
   const { user, signOut } = useAuthStore();
@@ -133,8 +135,13 @@ export default function HomePage() {
     }
   }
 
+  const { siteName, siteDescription } = useSettingsStore();
+
   return (
     <div className="min-h-screen bg-background">
+      {/* 页面元信息 */}
+      <PageMeta title={siteName} description={siteDescription} />
+      
       {/* 顶部导航栏 */}
       <Header onSignOut={handleSignOut} />
 

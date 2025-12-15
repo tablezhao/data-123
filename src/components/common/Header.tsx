@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Shield, Moon, Sun, LogOut, User, Settings } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/stores/authStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 interface HeaderProps {
   onSignOut: () => Promise<void>;
@@ -20,6 +21,7 @@ interface HeaderProps {
 export const Header = ({ onSignOut }: HeaderProps) => {
   const { user, profile, isAdmin } = useAuthStore();
   const { theme, setTheme } = useTheme();
+  const { siteName, siteDescription } = useSettingsStore();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -27,8 +29,8 @@ export const Header = ({ onSignOut }: HeaderProps) => {
         <div className="flex items-center gap-2">
           <Shield className="w-8 h-8 text-primary" />
           <div>
-            <h1 className="text-xl font-bold text-foreground">数据合规123导航</h1>
-            <p className="text-xs text-muted-foreground">专业的数据合规网站导航</p>
+            <h1 className="text-xl font-bold text-foreground">{siteName}</h1>
+            <p className="text-xs text-muted-foreground">{siteDescription}</p>
           </div>
         </div>
 

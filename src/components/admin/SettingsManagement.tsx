@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { Save } from 'lucide-react';
 import { getSiteSettings, updateSiteSetting } from '@/db/api';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 export default function SettingsManagement() {
   const [loading, setLoading] = useState(true);
@@ -59,6 +60,10 @@ export default function SettingsManagement() {
         updateSiteSetting('site_keywords', settings.site_keywords),
         updateSiteSetting('footer_text', settings.footer_text),
       ]);
+      
+      // 保存成功后刷新设置，确保所有组件能获取到最新数据
+      await useSettingsStore.getState().loadSettings();
+      
       toast.success('配置保存成功');
     } catch (error) {
       console.error('保存失败:', error);

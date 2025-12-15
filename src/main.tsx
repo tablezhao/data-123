@@ -4,10 +4,14 @@ import "./index.css";
 import App from "./App.tsx";
 import { AppWrapper } from "./components/common/PageMeta.tsx";
 import { initializeAuth } from "./stores/authStore";
+import { useSettingsStore } from "./stores/settingsStore";
 
 // 初始化应用
 const initApp = async () => {
-  await initializeAuth();
+  await Promise.all([
+    initializeAuth(),
+    useSettingsStore.getState().loadSettings()
+  ]);
 };
 
 createRoot(document.getElementById("root")!).render(
@@ -18,7 +22,7 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>
 );
 
-// 初始化认证状态
+// 初始化认证状态和网站设置
 initApp().catch((error) => {
-  console.error("初始化认证状态失败:", error);
+  console.error("初始化应用失败:", error);
 });
