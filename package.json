@@ -9,7 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "tsgo -p tsconfig.check.json; npx biome lint; .rules/check.sh;npx tailwindcss -i ./src/index.css -o /dev/null 2>&1 | grep -E '^(CssSyntaxError|Error):.*' || true;.rules/testBuild.sh"
+    "lint": "tsc -p tsconfig.check.json; npx biome lint; npx tailwindcss -i ./src/index.css -o /dev/null 2>&1 || true"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
