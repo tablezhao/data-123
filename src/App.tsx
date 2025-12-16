@@ -4,6 +4,7 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { FaviconManager } from '@/components/common/FaviconManager';
 import routes from './routes';
 
 // 加载指示器组件
@@ -34,6 +35,8 @@ const App: React.FC = () => {
     <ErrorBoundary>
       <Router>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          {/* 动态 Favicon 管理器 */}
+          <FaviconManager />
           <div className="flex flex-col min-h-screen">
             <main className="flex-grow">
               <Suspense fallback={<LoadingIndicator />}>

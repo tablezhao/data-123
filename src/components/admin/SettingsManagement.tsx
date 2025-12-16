@@ -8,16 +8,24 @@ import { toast } from 'sonner';
 import { Save } from 'lucide-react';
 import { getSiteSettings, updateSiteSetting } from '@/db/api';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { uploadImage } from '@/services/uploadService';
 
 export default function SettingsManagement() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [settings, setSettings] = useState({
     site_name: '',
     site_description: '',
     site_keywords: [] as string[],
     footer_text: '',
+    logo_url: '',
+    favicon_url: '',
   });
+  
+  // 用于预览的本地状态
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -37,12 +45,21 @@ export default function SettingsManagement() {
         siteKeywords = data.site_keywords.split(',').map(k => k.trim());
       }
       
+      const logoUrl = (data.logo_url as string) || '';
+      const faviconUrl = (data.favicon_url as string) || '';
+      
       setSettings({
         site_name: (data.site_name as string) || '',
         site_description: (data.site_description as string) || '',
         site_keywords: siteKeywords,
         footer_text: (data.footer_text as string) || '',
+        logo_url: logoUrl,
+        favicon_url: faviconUrl,
       });
+      
+      // 设置预览
+      setLogoPreview(logoUrl || null);
+      setFaviconPreview(faviconUrl || null);
     } catch (error) {
       console.error('加载配置失败:', error);
       toast.error('加载配置失败');
@@ -50,6 +67,72 @@ export default function SettingsManagement() {
       setLoading(false);
     }
   }
+
+  // 图片上传处理函数
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const result = await uploadImage(file, {
+        path: 'logos',
+        cacheControl: 3600,
+        upsert: true,
+      });
+
+      if (result.success && result.url) {
+        setSettings(prev => ({ ...prev, logo_url: result.url }));
+        setLogoPreview(result.url);
+        toast.success('Logo 上传成功');
+      } else {
+        toast.error(result.error || 'Logo 上传失败');
+      }
+    } catch (error) {
+      console.error('上传失败:', error);
+      toast.error('上传失败');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const result = await uploadImage(file, {
+        path: 'favicons',
+        cacheControl: 3600,
+        upsert: true,
+      });
+
+      if (result.success && result.url) {
+        setSettings(prev => ({ ...prev, favicon_url: result.url }));
+        setFaviconPreview(result.url);
+        toast.success('Favicon 上传成功');
+      } else {
+        toast.error(result.error || 'Favicon 上传失败');
+      }
+    } catch (error) {
+      console.error('上传失败:', error);
+      toast.error('上传失败');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 移除图片处理函数
+  const removeLogo = () => {
+    setSettings(prev => ({ ...prev, logo_url: '' }));
+    setLogoPreview(null);
+  };
+
+  const removeFavicon = () => {
+    setSettings(prev => ({ ...prev, favicon_url: '' }));
+    setFaviconPreview(null);
+  };
 
   async function handleSave() {
     try {
@@ -59,6 +142,8 @@ export default function SettingsManagement() {
         updateSiteSetting('site_description', settings.site_description),
         updateSiteSetting('site_keywords', settings.site_keywords),
         updateSiteSetting('footer_text', settings.footer_text),
+        updateSiteSetting('logo_url', settings.logo_url),
+        updateSiteSetting('favicon_url', settings.favicon_url),
       ]);
       
       // 保存成功后刷新设置，确保所有组件能获取到最新数据
@@ -133,10 +218,90 @@ export default function SettingsManagement() {
           />
         </div>
 
+        {/* Logo 上传 */}
+        <div className="space-y-2">
+          <Label htmlFor="logo_upload">网站 Logo</Label>
+          <div className="flex items-center gap-4">
+            <div className="flex-shrink-0">
+              {logoPreview ? (
+                <div className="relative">
+                  <img
+                    src={logoPreview}
+                    alt="Logo 预览"
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeLogo}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="w-16 h-16 border-2 border-dashed border-muted rounded flex items-center justify-center">
+                  <span className="text-muted-foreground">无 Logo</span>
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <Input
+                id="logo_upload"
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                disabled={uploading}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-muted-foreground mt-1">支持 JPG、PNG、SVG 格式，建议尺寸 200x200px</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Favicon 上传 */}
+        <div className="space-y-2">
+          <Label htmlFor="favicon_upload">网站 Favicon</Label>
+          <div className="flex items-center gap-4">
+            <div className="flex-shrink-0">
+              {faviconPreview ? (
+                <div className="relative">
+                  <img
+                    src={faviconPreview}
+                    alt="Favicon 预览"
+                    className="w-12 h-12 object-cover rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeFavicon}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="w-12 h-12 border-2 border-dashed border-muted rounded flex items-center justify-center">
+                  <span className="text-muted-foreground">无 Favicon</span>
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <Input
+                id="favicon_upload"
+                type="file"
+                accept="image/*"
+                onChange={handleFaviconUpload}
+                disabled={uploading}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-muted-foreground mt-1">支持 JPG、PNG、ICO 格式，建议尺寸 32x32px 或 64x64px</p>
+            </div>
+          </div>
+        </div>
+
         <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving || uploading}>
             <Save className="w-4 h-4 mr-2" />
-            {saving ? '保存中...' : '保存配置'}
+            {(saving || uploading) ? '保存中...' : '保存配置'}
           </Button>
         </div>
       </CardContent>

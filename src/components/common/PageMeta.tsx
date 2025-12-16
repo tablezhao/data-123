@@ -1,17 +1,44 @@
 import { HelmetProvider, Helmet } from "react-helmet-async";
+import { useSettingsStore } from '@/stores/settingsStore';
+
+interface PageMetaProps {
+  title: string;
+  description: string;
+  image?: string;
+}
 
 const PageMeta = ({
   title,
   description,
-}: {
-  title: string;
-  description: string;
-}) => (
-  <Helmet>
-    <title>{title}</title>
-    <meta name="description" content={description} />
-  </Helmet>
-);
+  image,
+}: PageMetaProps) => {
+  const { faviconUrl, logoUrl } = useSettingsStore();
+  
+  return (
+    <Helmet>
+      {/* 页面标题 */}
+      <title>{title}</title>
+      
+      {/* 基本元信息 */}
+      <meta name="description" content={description} />
+      
+      {/* 社交媒体元信息 */}
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:type" content="website" />
+      <meta property="og:image" content={image || logoUrl || ''} />
+      
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={image || logoUrl || ''} />
+      
+      {/* 网站图标 - 主要由 FaviconManager 组件管理，这里作为备用 */}
+      {faviconUrl && <link rel="icon" type="image/png" href={faviconUrl} />}
+      {logoUrl && <link rel="apple-touch-icon" href={logoUrl} />}
+    </Helmet>
+  );
+};
 
 export const AppWrapper = ({ children }: { children: React.ReactNode }) => (
   <HelmetProvider>{children}</HelmetProvider>

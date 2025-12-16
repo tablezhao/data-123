@@ -6,6 +6,8 @@ interface SettingsState {
   siteDescription: string;
   siteKeywords: string[];
   footerText: string;
+  logoUrl: string | null;
+  faviconUrl: string | null;
   loading: boolean;
   loadSettings: () => Promise<void>;
   refreshSettings: () => Promise<void>;
@@ -16,6 +18,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   siteDescription: '专业的数据合规网站导航',
   siteKeywords: [],
   footerText: '© 2025 数据合规123导航. All rights reserved.',
+  logoUrl: null,
+  faviconUrl: null,
   loading: true,
 
   loadSettings: async () => {
@@ -30,6 +34,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
           ? settings.site_keywords.split(',').map((k: string) => k.trim()) 
           : [],
         footerText: (settings.footer_text as string) || '© 2025 数据合规123导航. All rights reserved.',
+        logoUrl: (settings.logo_url as string) || null,
+        faviconUrl: (settings.favicon_url as string) || null,
         loading: false,
       });
     } catch (error) {

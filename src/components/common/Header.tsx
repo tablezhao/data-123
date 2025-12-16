@@ -21,13 +21,21 @@ interface HeaderProps {
 export const Header = ({ onSignOut }: HeaderProps) => {
   const { user, profile, isAdmin } = useAuthStore();
   const { theme, setTheme } = useTheme();
-  const { siteName, siteDescription } = useSettingsStore();
+  const { siteName, siteDescription, logoUrl } = useSettingsStore();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
-          <Shield className="w-8 h-8 text-primary" />
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt="Logo"
+              className="w-8 h-8 object-cover rounded"
+            />
+          ) : (
+            <Shield className="w-8 h-8 text-primary" />
+          )}
           <div>
             <h1 className="text-xl font-bold text-foreground">{siteName}</h1>
             <p className="text-xs text-muted-foreground">{siteDescription}</p>
