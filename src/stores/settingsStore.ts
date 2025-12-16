@@ -45,7 +45,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 
   refreshSettings: async () => {
-    await getSiteSettingsStore.getState().loadSettings();
+    await useSettingsStore.getState().loadSettings();
   },
 }));
 

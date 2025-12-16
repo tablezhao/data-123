@@ -1,0 +1,54 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- DATA 文字路径 -->
+    <path id="text-D" d="M0,120 L0,0 L50,0 C80,0 90,25 90,60 C90,95 80,120 50,120 Z M28,25 L28,95 L45,95 C60,95 62,80 62,60 C62,40 60,25 45,25 Z" fill="#FFFFFF"/>
+    <path id="text-A" d="M10,120 L35,0 L65,0 L90,120 L68,120 L62,90 L38,90 L32,120 Z M50,30 L42,70 L58,70 Z" fill="#FFFFFF"/>
+    <path id="text-T" d="M0,0 L70,0 L70,25 L50,25 L50,120 L20,120 L20,25 L0,25 Z" fill="#FFFFFF"/>
+  </defs>
+
+  <!-- 蓝色背景 -->
+  <rect x="0" y="0" width="512" height="512" rx="30" ry="30" fill="#0078D4"/>
+
+  <!-- 
+    整体组：
+    translate(75, 230): 
+    这是经过计算后的新坐标，确保 "DATA + 123" 这个组合体的视觉中心位于画布正中央。
+    skewY(-20): 保持原有的倾斜透视。
+  -->
+  <g transform="translate(75, 230) skewY(-20)">
+    
+    <!-- 
+      【背景层：空心数字 123】
+      保持 translate(100, 85) 不变，维持您满意的 30% 重合度效果。
+    -->
+    <g transform="translate(100, 85)" 
+       fill="none" 
+       stroke="#FFFFFF" 
+       stroke-width="3" 
+       stroke-dasharray="8 6" 
+       stroke-linejoin="round"
+       stroke-linecap="round">
+      
+      <!-- 数字 1 空心轮廓 -->
+      <path d="M20,30 L45,10 L65,10 L65,120 L25,120 L25,120 L25,45 Z" />
+      
+      <!-- 数字 2 空心轮廓 -->
+      <path d="M85,40 C85,10 115,10 135,10 C155,10 165,30 145,50 L105,95 L165,95 L165,120 L85,120 L85,105 L125,60 C135,50 135,45 135,40 C135,35 130,35 120,35 C105,35 105,45 105,50 L85,50 L85,40 Z" />
+      
+      <!-- 数字 3 空心轮廓 -->
+      <path d="M185,10 L250,10 L250,35 L220,35 L225,50 C245,50 260,65 260,85 C260,115 235,125 210,125 C185,125 180,105 180,90 L205,90 C205,100 210,105 220,105 C230,105 235,100 235,85 C235,70 225,70 205,70 L205,50 L185,50 L185,10 Z" />
+    </g>
+
+    <!-- 
+      【前景层：DATA 文字】
+      保持不变
+    -->
+    <g transform="translate(0, 0)">
+      <use href="#text-D" x="0" />
+      <use href="#text-A" x="90" />
+      <use href="#text-T" x="180" />
+      <use href="#text-A" x="250" />
+    </g>
+
+  </g>
+</svg>

@@ -1,14 +1,18 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { FaviconManager } from '@/components/common/FaviconManager';
-import routes from './routes';
+import routes, { usePreloadRoutes } from './routes';
 
-// 加载指示器组件
-const LoadingIndicator = () => (
+// 导入初始化函数
+import { initializeAuth } from './stores/authStore';
+import { useSettingsStore } from './stores/settingsStore';
+
+// 页面加载指示器
+const PageLoadingIndicator = () => (
   <div className="flex items-center justify-center min-h-screen">
     <div className="space-y-4 max-w-md w-full p-6">
       <div className="space-y-2">
@@ -30,7 +34,47 @@ const LoadingIndicator = () => (
   </div>
 );
 
+// 简化的应用加载指示器
+const AppLoadingIndicator = () => (
+  <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="text-center">
+      <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-primary text-primary-foreground rounded-full animate-pulse">
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </div>
+      <h2 className="text-xl font-semibold text-foreground">加载中...</h2>
+      <p className="text-sm text-muted-foreground mt-1">正在准备您的应用</p>
+    </div>
+  </div>
+);
+
 const App: React.FC = () => {
+  // 使用路由预加载钩子
+  usePreloadRoutes();
+  
+  // 使用 useSettingsStore 获取加载设置的方法
+  const loadSettings = useSettingsStore.getState().loadSettings;
+
+  useEffect(() => {
+    // 初始化应用，分离关键和非关键初始化
+    const initApp = async () => {
+      try {
+        // 1. 首先初始化认证（关键功能）
+        await initializeAuth();
+        
+        // 2. 延迟加载非关键功能（网站设置），给用户更好的初始加载体验
+        setTimeout(async () => {
+          await loadSettings();
+        }, 500);
+      } catch (error) {
+        console.error("初始化应用失败:", error);
+      }
+    };
+
+    initApp();
+  }, [loadSettings]);
+
   return (
     <ErrorBoundary>
       <Router>
@@ -39,7 +83,7 @@ const App: React.FC = () => {
           <FaviconManager />
           <div className="flex flex-col min-h-screen">
             <main className="flex-grow">
-              <Suspense fallback={<LoadingIndicator />}>
+              <Suspense fallback={<PageLoadingIndicator />}>
                 <Routes>
                   {routes.map((route, index) => (
                     <Route key={index} path={route.path} element={route.element} />

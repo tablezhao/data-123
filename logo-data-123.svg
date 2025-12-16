@@ -1,0 +1,61 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- ============== 字母路径定义 ============== -->
+    
+    <!-- D: 类似方块风格，右侧切角 -->
+    <path id="text-D" d="M0,0 L50,0 L80,30 L80,90 L50,120 L0,120 Z M30,25 L30,95 L45,95 L50,90 L50,30 L45,25 Z" fill="#FFFFFF"/>
+    
+    <!-- A: 复用原有路径 -->
+    <path id="text-A" d="M10,120 L35,0 L65,0 L90,120 L68,120 L62,90 L38,90 L32,120 Z M50,30 L42,70 L58,70 Z" fill="#FFFFFF"/>
+    
+    <!-- T: 顶部横条，中间竖条 -->
+    <path id="text-T" d="M0,0 L80,0 L80,25 L53,25 L53,120 L27,120 L27,25 L0,25 Z" fill="#FFFFFF"/>
+    
+    <!-- 1: 简单的竖条 -->
+    <path id="text-1" d="M10,0 L40,0 L40,120 L10,120 Z" fill="#FFFFFF"/>
+    
+    <!-- 2: 方块风格的2 -->
+    <path id="text-2" d="M0,25 L0,0 L80,0 L80,60 L30,60 L30,95 L80,95 L80,120 L0,120 L0,45 L50,45 L50,25 Z" fill="#FFFFFF"/>
+    
+    <!-- 3: 方块风格的3 -->
+    <path id="text-3" d="M0,0 L80,0 L80,120 L0,120 L0,95 L50,95 L50,70 L15,70 L15,50 L50,50 L50,25 L0,25 Z" fill="#FFFFFF"/>
+
+    <!-- 定义文字组合 -->
+    <g id="centered-stack">
+      <!-- 第一行：DATA -->
+      <g transform="translate(0, 0)">
+        <use href="#text-D" x="0" />
+        <use href="#text-A" x="95" /> <!-- 稍微调整间距 -->
+        <use href="#text-T" x="195" />
+        <use href="#text-A" x="285" />
+      </g>
+      
+      <!-- 第二行：123 -->
+      <!-- 为了视觉平衡，将123居中放置在DATA下方 -->
+      <g transform="translate(90, 175)">
+        <use href="#text-1" x="0" />
+        <use href="#text-2" x="50" />
+        <use href="#text-3" x="145" />
+      </g>
+    </g>
+  </defs>
+
+  <!-- 蓝色背景 -->
+  <rect x="0" y="0" width="512" height="512" rx="30" ry="30" fill="#0078D4"/>
+
+  <!-- 
+    主容器定位：
+    保持原有的透视变换 (skewY) 和平移逻辑
+  -->
+  <g transform="translate(75, 175) skewY(-20)">
+    
+    <!-- 【残影层】 -->
+    <g transform="translate(15, 15)" opacity="0.25">
+      <use href="#centered-stack" />
+    </g>
+
+    <!-- 【主体层】 -->
+    <use href="#centered-stack" />
+
+  </g>
+</svg>
