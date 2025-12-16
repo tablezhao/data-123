@@ -13,6 +13,7 @@ import { Shield, Moon, Sun, LogOut, User, Settings } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/stores/authStore';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { Logo } from '@/components/ui/Logo';
 
 interface HeaderProps {
   onSignOut: () => Promise<void>;
@@ -28,13 +29,15 @@ export const Header = ({ onSignOut }: HeaderProps) => {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           {logoUrl ? (
-            <img
+            <Logo
               src={logoUrl}
               alt="Logo"
-              className="w-8 h-8 object-cover rounded"
+              size="md"
+              mode="contain"
+              square
             />
           ) : (
-            <Shield className="w-8 h-8 text-primary" />
+            <Shield className="w-10 h-10 text-primary" />
           )}
           <div>
             <h1 className="text-xl font-bold text-foreground">{siteName}</h1>

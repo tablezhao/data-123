@@ -221,14 +221,14 @@ export default function SettingsManagement() {
         {/* Logo 上传 */}
         <div className="space-y-2">
           <Label htmlFor="logo_upload">网站 Logo</Label>
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
               {logoPreview ? (
                 <div className="relative">
                   <img
                     src={logoPreview}
                     alt="Logo 预览"
-                    className="w-16 h-16 object-cover rounded"
+                    className="w-24 h-24 object-contain aspect-square rounded bg-muted p-2"
                   />
                   <button
                     type="button"
@@ -239,7 +239,7 @@ export default function SettingsManagement() {
                   </button>
                 </div>
               ) : (
-                <div className="w-16 h-16 border-2 border-dashed border-muted rounded flex items-center justify-center">
+                <div className="w-24 h-24 border-2 border-dashed border-muted rounded flex items-center justify-center bg-muted">
                   <span className="text-muted-foreground">无 Logo</span>
                 </div>
               )}
@@ -253,7 +253,12 @@ export default function SettingsManagement() {
                 disabled={uploading}
                 className="cursor-pointer"
               />
-              <p className="text-xs text-muted-foreground mt-1">支持 JPG、PNG、SVG 格式，建议尺寸 200x200px</p>
+              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                <p>支持 JPG、PNG、SVG 格式</p>
+                <p>建议尺寸：200x200px（正方形）</p>
+                <p>最大文件大小：2MB</p>
+                <p className="text-primary-foreground">✅ 预览效果：保持原始比例显示，不会被压缩</p>
+              </div>
             </div>
           </div>
         </div>
@@ -261,14 +266,14 @@ export default function SettingsManagement() {
         {/* Favicon 上传 */}
         <div className="space-y-2">
           <Label htmlFor="favicon_upload">网站 Favicon</Label>
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
               {faviconPreview ? (
                 <div className="relative">
                   <img
                     src={faviconPreview}
                     alt="Favicon 预览"
-                    className="w-12 h-12 object-cover rounded"
+                    className="w-16 h-16 object-contain aspect-square rounded bg-muted p-2"
                   />
                   <button
                     type="button"
@@ -279,7 +284,7 @@ export default function SettingsManagement() {
                   </button>
                 </div>
               ) : (
-                <div className="w-12 h-12 border-2 border-dashed border-muted rounded flex items-center justify-center">
+                <div className="w-16 h-16 border-2 border-dashed border-muted rounded flex items-center justify-center bg-muted">
                   <span className="text-muted-foreground">无 Favicon</span>
                 </div>
               )}
@@ -293,7 +298,12 @@ export default function SettingsManagement() {
                 disabled={uploading}
                 className="cursor-pointer"
               />
-              <p className="text-xs text-muted-foreground mt-1">支持 JPG、PNG、ICO 格式，建议尺寸 32x32px 或 64x64px</p>
+              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                <p>支持 JPG、PNG、ICO 格式</p>
+                <p>建议尺寸：32x32px 或 64x64px（正方形）</p>
+                <p>最大文件大小：1MB</p>
+                <p className="text-primary-foreground">✅ 浏览器会自动缩放，保持最佳显示效果</p>
+              </div>
             </div>
           </div>
         </div>
