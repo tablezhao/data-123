@@ -25,9 +25,5 @@
         }
       ]
     }
-  ],
-  "output": "export",
-  "images": {
-    "disable": true
-  }
+  ]
 }

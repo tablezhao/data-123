@@ -4,8 +4,6 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- 禁用 Vercel 初始状态加载 -->
-    <meta name="vercel-initial-state" content="disabled" />
     <!-- 优化初始加载性能 -->
     <link rel="preload" href="/src/main.tsx" as="script" />
     <!-- 隐藏 Vercel 注入的加载动画 -->
@@ -19,9 +17,20 @@
         opacity: 1 !important;
         transition: none !important;
       }
+      /* 隐藏所有可能的加载动画 */
+      #__next,
+      #root {
+        display: block !important;
+        opacity: 1 !important;
+      }
+      /* 隐藏 Vercel 开发服务器的错误覆盖层 */
+      .vite-error-overlay,
+      .vercel-error-overlay {
+        display: none !important;
+      }
     </style>
   </head>
-  <body class="dark:bg-gray-900" data-vercel-no-initial-state>
+  <body class="dark:bg-gray-900">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
