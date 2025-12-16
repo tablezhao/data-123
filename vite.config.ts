@@ -57,15 +57,32 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // 配置优化选项，减少不必要的预加载
+  // 配置优化选项，提高构建和加载性能
   optimizeDeps: {
     include: [],
+    exclude: [],
+    esbuildOptions: {
+      // 优化依赖构建
+      target: 'es2020',
+    },
   },
-  // 配置构建选项
+  // 配置构建选项，优化生产构建
   build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    minify: 'esbuild',
+    sourcemap: false,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks: {
+          // 合理分割代码，提高初始加载速度
+          react: ['react', 'react-dom', 'react-router-dom'],
+        },
+        // 优化静态资源路径
+        assetFileNames: 'assets/[name].[hash:8].[ext]',
+        chunkFileNames: 'assets/[name].[hash:8].js',
+        entryFileNames: 'assets/[name].[hash:8].js',
       },
     },
   },

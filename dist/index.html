@@ -4,8 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script type="module" crossorigin src="/assets/index-BT88DKF7.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BqcozVzU.css">
+    <!-- 禁用 Vercel 初始状态加载 -->
+    <meta name="vercel-initial-state" content="disabled" />
+    <!-- 优化初始加载性能 -->
+    <link rel="preload" href="data:application/octet-stream;base64,aW1wb3J0IHsgU3RyaWN0TW9kZSB9IGZyb20gInJlYWN0IjsKaW1wb3J0IHsgY3JlYXRlUm9vdCB9IGZyb20gInJlYWN0LWRvbS9jbGllbnQiOwppbXBvcnQgIi4vaW5kZXguY3NzIjsKaW1wb3J0IEFwcCBmcm9tICIuL0FwcC50c3giOwppbXBvcnQgeyBBcHBXcmFwcGVyIH0gZnJvbSAiLi9jb21wb25lbnRzL2NvbW1vbi9QYWdlTWV0YS50c3giOwoKLy8g55u05o6l5riy5p+T5bqU55So77yM5Yid5aeL5YyW6YC76L6R56e75YiwIEFwcCDnu4Tku7blhoXpg6gKY3JlYXRlUm9vdChkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgicm9vdCIpISkucmVuZGVyKAogIDxTdHJpY3RNb2RlPgogICAgPEFwcFdyYXBwZXI+CiAgICAgIDxBcHAgLz4KICAgIDwvQXBwV3JhcHBlcj4KICA8L1N0cmljdE1vZGU+Cik7Cg==" as="script" />
+    <!-- 隐藏 Vercel 注入的加载动画 -->
+    <style>
+      /* 隐藏 Vercel 加载动画 */
+      [data-vercel-loading] {
+        display: none !important;
+      }
+      /* 确保页面加载时立即显示内容 */
+      body {
+        opacity: 1 !important;
+        transition: none !important;
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index.CpBVHx47.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/react.DMzWNnq4.js">
+    <link rel="stylesheet" crossorigin href="/assets/index.BqcozVzU.css">
     <script>
               (function () {
                 const redirect = new URLSearchParams(location.search).get('redirect');
@@ -26,7 +43,7 @@
                 }
               </style>
   </head>
-  <body class="dark:bg-gray-900">
+  <body class="dark:bg-gray-900" data-vercel-no-initial-state>
     <div id="root"></div>
     <script id="md-click">
               window.mdClick = e => {
