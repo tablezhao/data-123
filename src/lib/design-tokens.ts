@@ -22,7 +22,7 @@ export const colorTokens = {
     950: 'hsl(220, 100%, 5%)',
   },
   
-  中性色系 - 灰色系
+  // 中性色系 - 灰色系
   gray: {
     50: 'hsl(210, 20%, 98%)',   // 背景色
     100: 'hsl(210, 20%, 95%)',  // 卡片背景
@@ -181,59 +181,59 @@ export const typographyTokens = {
   // 排版层级
   text: {
     hero: {
-      fontSize: typographyTokens.fontSize['5xl'],
-      fontWeight: typographyTokens.fontWeight.bold,
-      lineHeight: typographyTokens.lineHeight.tight,
-      letterSpacing: typographyTokens.letterSpacing.tight,
+      fontSize: '3rem',
+      fontWeight: '700',
+      lineHeight: '1.25',
+      letterSpacing: '-0.025em',
     },
     
     h1: {
-      fontSize: typographyTokens.fontSize['4xl'],
-      fontWeight: typographyTokens.fontWeight.bold,
-      lineHeight: typographyTokens.lineHeight.tight,
-      letterSpacing: typographyTokens.letterSpacing.tight,
+      fontSize: '2.25rem',
+      fontWeight: '700',
+      lineHeight: '1.25',
+      letterSpacing: '-0.025em',
     },
     
     h2: {
-      fontSize: typographyTokens.fontSize['3xl'],
-      fontWeight: typographyTokens.fontWeight.semibold,
-      lineHeight: typographyTokens.lineHeight.snug,
-      letterSpacing: typographyTokens.letterSpacing.tight,
+      fontSize: '1.875rem',
+      fontWeight: '600',
+      lineHeight: '1.375',
+      letterSpacing: '-0.025em',
     },
     
     h3: {
-      fontSize: typographyTokens.fontSize['2xl'],
-      fontWeight: typographyTokens.fontWeight.semibold,
-      lineHeight: typographyTokens.lineHeight.snug,
-      letterSpacing: typographyTokens.letterSpacing.normal,
+      fontSize: '1.5rem',
+      fontWeight: '600',
+      lineHeight: '1.375',
+      letterSpacing: '0em',
     },
     
     h4: {
-      fontSize: typographyTokens.fontSize.xl,
-      fontWeight: typographyTokens.fontWeight.semibold,
-      lineHeight: typographyTokens.lineHeight.snug,
-      letterSpacing: typographyTokens.letterSpacing.normal,
+      fontSize: '1.25rem',
+      fontWeight: '600',
+      lineHeight: '1.375',
+      letterSpacing: '0em',
     },
     
     body: {
-      fontSize: typographyTokens.fontSize.base,
-      fontWeight: typographyTokens.fontWeight.normal,
-      lineHeight: typographyTokens.lineHeight.normal,
-      letterSpacing: typographyTokens.letterSpacing.normal,
+      fontSize: '1rem',
+      fontWeight: '400',
+      lineHeight: '1.5',
+      letterSpacing: '0em',
     },
     
     small: {
-      fontSize: typographyTokens.fontSize.sm,
-      fontWeight: typographyTokens.fontWeight.normal,
-      lineHeight: typographyTokens.lineHeight.normal,
-      letterSpacing: typographyTokens.letterSpacing.wide,
+      fontSize: '0.875rem',
+      fontWeight: '400',
+      lineHeight: '1.5',
+      letterSpacing: '0.025em',
     },
     
     caption: {
-      fontSize: typographyTokens.fontSize.xs,
-      fontWeight: typographyTokens.fontWeight.normal,
-      lineHeight: typographyTokens.lineHeight.normal,
-      letterSpacing: typographyTokens.letterSpacing.wide,
+      fontSize: '0.75rem',
+      fontWeight: '400',
+      lineHeight: '1.5',
+      letterSpacing: '0.025em',
     },
   },
 } as const;
