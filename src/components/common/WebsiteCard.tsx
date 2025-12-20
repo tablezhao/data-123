@@ -14,59 +14,6 @@ interface WebsiteCardProps {
   showClickCount?: boolean;
 }
 
-// 图片懒加载组件
-const LazyImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
-  const [isLoaded, setIsLoaded] = React.useState(false);
-  const [hasError, setHasError] = React.useState(false);
-  const imgRef = React.useRef<HTMLImageElement>(null);
-
-  React.useEffect(() => {
-    // 检查 IntersectionObserver 是否可用
-    if (typeof IntersectionObserver === 'undefined') {
-      // 在不支持 IntersectionObserver 的环境中直接加载图片
-      setIsLoaded(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsLoaded(true);
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-
-    return () => {
-      if (imgRef.current) {
-        observer.unobserve(imgRef.current);
-      }
-    };
-  }, []);
-
-  if (hasError) {
-    return null;
-  }
-
-  return (
-    <img
-      ref={imgRef}
-      src={isLoaded ? src : ''}
-      alt={alt}
-      className={className}
-      onError={() => setHasError(true)}
-      style={{ display: hasError ? 'none' : 'inline-block' }}
-    />
-  );
-};
-
 export const WebsiteCard = ({ 
   website, 
   isFavorite, 
@@ -85,10 +32,16 @@ export const WebsiteCard = ({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 flex-1">
             {website.favicon_url ? (
-              <LazyImage
+              <img
                 src={website.favicon_url}
                 alt=""
                 className="w-5 h-5"
+                loading="lazy"
+                width="20"
+                height="20"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             ) : (
               <Star className="w-5 h-5 text-primary" />

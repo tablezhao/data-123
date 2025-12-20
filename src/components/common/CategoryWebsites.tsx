@@ -24,8 +24,11 @@ export const CategoryWebsites = ({
   onWebsiteClick, 
   onToggleFavorite 
 }: CategoryWebsitesProps) => {
-  // 按分类分组网站
-  const websitesByCategory = categories.reduce((acc, category) => {
+  // 过滤可见分类
+  const visibleCategories = categories.filter(category => category.is_visible);
+  
+  // 按分类分组网站，只考虑可见分类
+  const websitesByCategory = visibleCategories.reduce((acc, category) => {
     acc[category.id] = websites.filter((w) => w.category_id === category.id);
     return acc;
   }, {} as Record<string, Website[]>);
@@ -33,15 +36,23 @@ export const CategoryWebsites = ({
   // 计算显示的网站
   const displayWebsites = 
     selectedCategory === 'all' 
-      ? websites 
-      : websites.filter((w) => w.category_id === selectedCategory);
+      ? websites.filter(w => {
+          // 只显示可见分类下的网站
+          const category = categories.find(c => c.id === w.category_id);
+          return category?.is_visible;
+        })
+      : websites.filter((w) => {
+          // 只显示可见分类下的网站
+          const category = categories.find(c => c.id === w.category_id);
+          return w.category_id === selectedCategory && category?.is_visible;
+        });
 
   return (
     <section>
       <Tabs value={selectedCategory} onValueChange={onCategoryChange}>
         <TabsList className="mb-6">
           <TabsTrigger value="all">全部</TabsTrigger>
-          {categories.map((category) => (
+          {visibleCategories.map((category) => (
             <TabsTrigger key={category.id} value={category.id}>
               {category.name}
             </TabsTrigger>
@@ -64,7 +75,7 @@ export const CategoryWebsites = ({
             </div>
           ) : selectedCategory === 'all' ? (
             <div className="space-y-8">
-              {categories.map((category) => {
+              {visibleCategories.map((category) => {
                 const categoryWebsites = websitesByCategory[category.id] || [];
                 if (categoryWebsites.length === 0) return null;
 

@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { useSettingsStore } from '@/stores/settingsStore';
 import {
   getCategories,
   createCategory,
@@ -57,6 +58,10 @@ export default function CategoryManagement() {
     sort_order: 0,
     is_visible: true,
   });
+  // 热门推荐分类管理相关状态
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  // 从settingsStore获取热门推荐模块的显示状态
+  const { showFeaturedSection, toggleFeaturedSection } = useSettingsStore();
 
   useEffect(() => {
     loadCategories();
@@ -142,6 +147,51 @@ export default function CategoryManagement() {
       toast.error('更新失败');
     }
   }
+
+  // 处理分类选择
+  const handleCategorySelect = (categoryId: string) => {
+    const newSelected = new Set(selectedCategories);
+    if (newSelected.has(categoryId)) {
+      newSelected.delete(categoryId);
+    } else {
+      newSelected.add(categoryId);
+    }
+    setSelectedCategories(newSelected);
+  };
+
+  // 处理全选/取消全选
+  const handleSelectAll = () => {
+    if (selectedCategories.size === flatCategories.length) {
+      setSelectedCategories(new Set());
+    } else {
+      setSelectedCategories(new Set(flatCategories.map(cat => cat.id)));
+    }
+  };
+
+  // 批量更新可见性
+  const handleBatchToggleVisibility = async (isVisible: boolean) => {
+    if (selectedCategories.size === 0) {
+      toast.warning('请选择至少一个分类');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // 批量更新分类可见性
+      const updatePromises = Array.from(selectedCategories).map(id => 
+        updateCategory(id, { is_visible })
+      );
+      await Promise.all(updatePromises);
+      toast.success(`已${isVisible ? '显示' : '隐藏'}选中的${selectedCategories.size}个分类`);
+      setSelectedCategories(new Set());
+      loadCategories();
+    } catch (error) {
+      console.error('批量更新失败:', error);
+      toast.error('批量更新失败');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 展平分类树
   function flattenCategories(cats: Category[], level = 0): Array<Category & { level: number }> {
@@ -244,6 +294,67 @@ export default function CategoryManagement() {
         </div>
       </CardHeader>
       <CardContent>
+        {/* 热门推荐模块控制 */}
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">首页热门推荐模块管理</CardTitle>
+            <CardDescription>控制首页热门推荐模块的显示状态</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  开启后，首页将显示热门推荐模块，展示热门网站
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={showFeaturedSection}
+                  onCheckedChange={toggleFeaturedSection}
+                />
+                <span className="text-sm font-medium">
+                  {showFeaturedSection ? '已开启' : '已关闭'}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 批量操作区域 */}
+        {flatCategories.length > 0 && (
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAll}
+              >
+                {selectedCategories.size === flatCategories.length ? '取消全选' : '全选'}
+                ({selectedCategories.size}/{flatCategories.length})
+              </Button>
+              {selectedCategories.size > 0 && (
+                <>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleBatchToggleVisibility(true)}
+                  >
+                    批量显示
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleBatchToggleVisibility(false)}
+                  >
+                    批量隐藏
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 分类列表 */}
         {loading ? (
           <div className="text-center py-8">加载中...</div>
         ) : flatCategories.length === 0 ? (
@@ -254,6 +365,14 @@ export default function CategoryManagement() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedCategories.size === flatCategories.length && flatCategories.length > 0}
+                    onChange={handleSelectAll}
+                    className="rounded border border-input bg-background text-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  />
+                </TableHead>
                 <TableHead>名称</TableHead>
                 <TableHead>描述</TableHead>
                 <TableHead>排序</TableHead>
@@ -264,6 +383,14 @@ export default function CategoryManagement() {
             <TableBody>
               {flatCategories.map((category) => (
                 <TableRow key={category.id}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.has(category.id)}
+                      onChange={() => handleCategorySelect(category.id)}
+                      className="rounded border border-input bg-background text-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2" style={{ paddingLeft: `${category.level * 20}px` }}>
                       {category.icon && <span>{category.icon}</span>}

@@ -57,3 +57,40 @@ export async function isFavorited(websiteId: string): Promise<boolean> {
   if (error) return false;
   return !!data;
 }
+
+// 批量检查收藏状态
+export async function areFavorited(websiteIds: string[]): Promise<Record<string, boolean>> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    // 如果用户未登录，所有网站都未收藏
+    return websiteIds.reduce((acc, id) => {
+      acc[id] = false;
+      return acc;
+    }, {} as Record<string, boolean>);
+  }
+
+  if (websiteIds.length === 0) {
+    return {};
+  }
+
+  const { data, error } = await supabase
+    .from('user_favorites')
+    .select('website_id')
+    .eq('user_id', user.id)
+    .in('website_id', websiteIds);
+
+  if (error) {
+    console.error('批量检查收藏状态失败:', error);
+    return websiteIds.reduce((acc, id) => {
+      acc[id] = false;
+      return acc;
+    }, {} as Record<string, boolean>);
+  }
+
+  const favoritedIds = new Set(data?.map(item => item.website_id) || []);
+  
+  return websiteIds.reduce((acc, id) => {
+    acc[id] = favoritedIds.has(id);
+    return acc;
+  }, {} as Record<string, boolean>);
+}

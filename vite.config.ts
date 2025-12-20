@@ -86,4 +86,11 @@ export default defineConfig({
       },
     },
   },
+  // 配置服务器选项
+  server: {
+    // 开发环境不设置复杂的缓存头，避免浏览器缓存问题
+    headers: {
+      'Cache-Control': 'no-cache',
+    },
+  },
 });
