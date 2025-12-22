@@ -41,6 +41,7 @@ export const FeaturedWebsites = ({
               onToggleFavorite={onToggleFavorite}
               showCategory={true}
               showClickCount={true}
+              priority={true}
             />
           ))}
         </div>

@@ -93,7 +93,13 @@ export const CategoryWebsites = ({
                 if (categoryWebsites.length === 0) return null;
 
                 return (
-                  <div key={category.id}>
+                  <div 
+                    key={category.id}
+                    style={{ 
+                      contentVisibility: 'auto', 
+                      containIntrinsicSize: 'auto 300px' // 预估高度，防止滚动条跳动
+                    }}
+                  >
                     <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                       {category.icon && <span>{category.icon}</span>}
                       {category.name}

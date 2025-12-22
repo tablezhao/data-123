@@ -53,7 +53,8 @@ export const Logo: React.FC<LogoProps> = ({
         ${className}
       `}
       draggable={false}
-      loading="lazy"
+      loading="eager"
+      fetchPriority="high"
     />
   );
 };
