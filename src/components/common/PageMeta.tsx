@@ -12,7 +12,7 @@ const PageMeta = ({
   description,
   image,
 }: PageMetaProps) => {
-  const { faviconUrl, logoUrl } = useSettingsStore();
+  const { logoUrl } = useSettingsStore();
   
   return (
     <Helmet>
@@ -32,10 +32,6 @@ const PageMeta = ({
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image || logoUrl || ''} />
-      
-      {/* 网站图标 - 主要由 FaviconManager 组件管理，这里作为备用 */}
-      {faviconUrl && <link rel="icon" type="image/png" href={faviconUrl} />}
-      {logoUrl && <link rel="apple-touch-icon" href={logoUrl} />}
     </Helmet>
   );
 };

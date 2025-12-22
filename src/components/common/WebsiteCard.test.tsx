@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { WebsiteCard } from './WebsiteCard';
@@ -11,17 +12,22 @@ const mockWebsite: Website = {
   url: 'https://example.com',
   category_id: 'cat-1',
   favicon_url: 'https://example.com/favicon.ico',
+  logo_url: null,
+  sort_order: 0,
   is_featured: false,
   is_visible: true,
   click_count: 100,
+  created_by: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   category: {
     id: 'cat-1',
     name: '测试分类',
+    description: null,
     parent_id: null,
     sort_order: 0,
     icon: null,
+    is_visible: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     children: [],

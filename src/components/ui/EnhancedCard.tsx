@@ -10,7 +10,6 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { designSystem, a11yTokens } from '@/lib/design-tokens';
 import EnhancedButton from './EnhancedButton';
-import { useComponentAccessibility } from '@/lib/accessibility/hooks';
 
 // 卡片变体配置
 const cardVariants = cva(
@@ -155,7 +154,7 @@ const cardVariants = cva(
 
 // 卡片属性接口
 export interface CardProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'>,
     VariantProps<typeof cardVariants> {
   // 交互状态
   interactive?: boolean;
@@ -174,7 +173,11 @@ export interface CardProps
   
   // 头部内容
   header?: React.ReactNode;
-  
+
+  title?: React.ReactNode;
+
+  description?: React.ReactNode;
+
   // 底部内容
   footer?: React.ReactNode;
   
@@ -204,15 +207,6 @@ export interface CardProps
   
   // 自定义样式
   className?: string;
-  
-  // 无障碍测试选项
-  enableAccessibilityTesting?: boolean;
-  
-  // 对比度要求 (默认: 4.5:1)
-  contrastRatio?: number;
-  
-  // 无障碍测试回调
-  onAccessibilityViolation?: (violations: any[]) => void;
 }
 
 // 增强卡片组件
@@ -232,6 +226,8 @@ const EnhancedCard = forwardRef<HTMLDivElement, CardProps>(
       selected,
       disabled,
       header,
+      title,
+      description,
       footer,
       media,
       actions,
@@ -242,9 +238,6 @@ const EnhancedCard = forwardRef<HTMLDivElement, CardProps>(
       onCardClick,
       keyboardAccessible = true,
       ariaLabel,
-      enableAccessibilityTesting = false,
-      contrastRatio = 4.5,
-      onAccessibilityViolation,
       ...props
     },
     ref
@@ -252,22 +245,6 @@ const EnhancedCard = forwardRef<HTMLDivElement, CardProps>(
     const [isHovered, setIsHovered] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     
-    // 无障碍测试集成
-    const cardRef = useRef<HTMLDivElement>(null);
-    const elementRef = ref || cardRef;
-    
-    // 集成无障碍测试
-    const {
-      elementRef: accessibilityRef,
-      violations,
-      isTesting,
-      testComponent,
-      hasViolations,
-      contrastTest,
-      navigationTest,
-      screenReaderTest
-    } = useComponentAccessibility<HTMLDivElement>();
-
     // 交互状态处理
     const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
       if (!disabled) {
@@ -341,24 +318,10 @@ const EnhancedCard = forwardRef<HTMLDivElement, CardProps>(
           'opacity-50 cursor-not-allowed': disabled,
           'cursor-pointer': clickable || interactive,
           'animate-pulse': loading,
-          // 无障碍测试状态样式
-          'ring-2 ring-red-500 ring-opacity-50': enableAccessibilityTesting && hasViolations,
-          'animate-pulse': enableAccessibilityTesting && isTesting,
         },
         className
       );
-    }, [cardVariant, size, radius, shadow, hover, responsive, selected, disabled, loading, clickable, interactive, className, enableAccessibilityTesting, hasViolations, isTesting]);
-
-    // 无障碍测试效果
-    useEffect(() => {
-      if (enableAccessibilityTesting && elementRef.current) {
-        testComponent().then(result => {
-          if (result?.hasViolations && onAccessibilityViolation) {
-            onAccessibilityViolation(result.violations);
-          }
-        });
-      }
-    }, [enableAccessibilityTesting, testComponent, onAccessibilityViolation]);
+    }, [cardVariant, size, radius, shadow, hover, responsive, selected, disabled, loading, clickable, interactive, className]);
 
     // ARIA属性
     const ariaProps = {
@@ -372,7 +335,7 @@ const EnhancedCard = forwardRef<HTMLDivElement, CardProps>(
 
     return (
       <div
-        ref={elementRef as any}
+        ref={ref}
         className={cardClasses}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -380,9 +343,6 @@ const EnhancedCard = forwardRef<HTMLDivElement, CardProps>(
         onBlur={handleBlur}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        // 无障碍测试属性
-        data-a11y-testing={enableAccessibilityTesting}
-        data-a11y-violations={enableAccessibilityTesting ? violations.length : undefined}
         {...ariaProps}
         {...props}
       >
@@ -401,9 +361,14 @@ const EnhancedCard = forwardRef<HTMLDivElement, CardProps>(
         )}
 
         {/* 头部内容 */}
-        {header && (
+        {(header || title || description) && (
           <div className="border-b border-[var(--color-border-light)] pb-3 mb-3">
-            {header}
+            {header ?? (
+              <div className="space-y-1">
+                {title && <div className="text-base font-semibold text-[var(--color-text-primary)]">{title}</div>}
+                {description && <div className="text-sm text-[var(--color-text-secondary)]">{description}</div>}
+              </div>
+            )}
           </div>
         )}
 
@@ -441,26 +406,6 @@ const EnhancedCard = forwardRef<HTMLDivElement, CardProps>(
           </div>
         )}
         
-        {/* 无障碍测试指示器 */}
-        {enableAccessibilityTesting && hasViolations && (
-          <div className="absolute top-2 left-2 z-20">
-            <span 
-              className="w-3 h-3 bg-red-500 rounded-full animate-pulse block" 
-              aria-label={`发现 ${violations.length} 个无障碍问题`}
-              title={`发现 ${violations.length} 个无障碍问题`}
-            />
-          </div>
-        )}
-        
-        {enableAccessibilityTesting && isTesting && (
-          <div className="absolute top-2 left-2 z-20">
-            <span 
-              className="w-3 h-3 bg-blue-500 rounded-full animate-pulse block" 
-              aria-label="无障碍测试中..."
-              title="无障碍测试中..."
-            />
-          </div>
-        )}
       </div>
     );
   }

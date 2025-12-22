@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WebsiteCard } from './WebsiteCard';
@@ -24,28 +25,40 @@ export const CategoryWebsites = ({
   onWebsiteClick, 
   onToggleFavorite 
 }: CategoryWebsitesProps) => {
-  // 过滤可见分类
-  const visibleCategories = categories.filter(category => category.is_visible);
-  
-  // 按分类分组网站，只考虑可见分类
-  const websitesByCategory = visibleCategories.reduce((acc, category) => {
-    acc[category.id] = websites.filter((w) => w.category_id === category.id);
-    return acc;
-  }, {} as Record<string, Website[]>);
+  const { visibleCategories, visibleCategoryById } = useMemo(() => {
+    const visibleCategories = categories.filter((category) => category.is_visible);
+    const visibleCategoryById: Record<string, Category> = {};
+    for (const category of visibleCategories) {
+      visibleCategoryById[category.id] = category;
+    }
+    return { visibleCategories, visibleCategoryById };
+  }, [categories]);
 
-  // 计算显示的网站
-  const displayWebsites = 
-    selectedCategory === 'all' 
-      ? websites.filter(w => {
-          // 只显示可见分类下的网站
-          const category = categories.find(c => c.id === w.category_id);
-          return category?.is_visible;
-        })
-      : websites.filter((w) => {
-          // 只显示可见分类下的网站
-          const category = categories.find(c => c.id === w.category_id);
-          return w.category_id === selectedCategory && category?.is_visible;
-        });
+  const websitesByCategory = useMemo(() => {
+    const acc: Record<string, Website[]> = {};
+    for (const category of visibleCategories) {
+      acc[category.id] = [];
+    }
+    for (const website of websites) {
+      if (!visibleCategoryById[website.category_id]) continue;
+      (acc[website.category_id] ??= []).push(website);
+    }
+    return acc;
+  }, [visibleCategories, visibleCategoryById, websites]);
+
+  const displayWebsites = useMemo(() => {
+    if (selectedCategory === 'all') return null;
+    if (!visibleCategoryById[selectedCategory]) return [];
+    return websitesByCategory[selectedCategory] || [];
+  }, [selectedCategory, visibleCategoryById, websitesByCategory]);
+
+  const hasAnyWebsites = useMemo(() => {
+    if (loading) return true;
+    if (selectedCategory === 'all') {
+      return visibleCategories.some((category) => (websitesByCategory[category.id] || []).length > 0);
+    }
+    return (displayWebsites || []).length > 0;
+  }, [displayWebsites, loading, selectedCategory, visibleCategories, websitesByCategory]);
 
   return (
     <section>
@@ -107,7 +120,7 @@ export const CategoryWebsites = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {displayWebsites.map((website) => (
+              {(displayWebsites || []).map((website) => (
                 <WebsiteCard
                   key={website.id}
                   website={website}
@@ -121,7 +134,7 @@ export const CategoryWebsites = ({
             </div>
           )}
 
-          {!loading && displayWebsites.length === 0 && (
+          {!hasAnyWebsites && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">暂无网站</p>
             </div>

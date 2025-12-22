@@ -9,7 +9,6 @@ import React, { forwardRef, useMemo, useRef, useEffect } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { designSystem, a11yTokens } from '@/lib/design-tokens';
-import { useComponentAccessibility } from '@/lib/accessibility/hooks';
 
 // 按钮变体配置
 const buttonVariants = cva(
@@ -192,15 +191,6 @@ export interface ButtonProps
   
   // 自定义样式
   className?: string;
-  
-  // 无障碍测试选项
-  enableAccessibilityTesting?: boolean;
-  
-  // 对比度要求 (默认: 4.5:1)
-  contrastRatio?: number;
-  
-  // 无障碍测试回调
-  onAccessibilityViolation?: (violations: any[]) => void;
 }
 
 // 增强按钮组件
@@ -223,48 +213,18 @@ const EnhancedButton = forwardRef<HTMLButtonElement, ButtonProps>(
       breakpoint,
       children,
       disabled,
-      enableAccessibilityTesting = false,
-      contrastRatio = 4.5,
-      onAccessibilityViolation,
       onClick,
       onKeyDown,
       ...props
     },
     ref
   ) => {
-    // 无障碍测试集成
-    const buttonRef = useRef<HTMLButtonElement>(null);
-    const elementRef = ref || buttonRef;
-    
-    // 集成无障碍测试
-    const {
-      elementRef: accessibilityRef,
-      violations,
-      isTesting,
-      testComponent,
-      hasViolations,
-      contrastTest,
-      navigationTest,
-      screenReaderTest
-    } = useComponentAccessibility<HTMLButtonElement>();
-
     // 状态管理
     const buttonState = useMemo(() => {
       if (loading) return 'loading';
       if (disabled) return 'disabled';
       return state;
     }, [loading, disabled, state]);
-
-    // 无障碍测试效果
-    useEffect(() => {
-      if (enableAccessibilityTesting && elementRef.current) {
-        testComponent().then(result => {
-          if (result?.hasViolations && onAccessibilityViolation) {
-            onAccessibilityViolation(result.violations);
-          }
-        });
-      }
-    }, [enableAccessibilityTesting, testComponent, onAccessibilityViolation]);
 
     // 键盘快捷键处理
     const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -313,7 +273,7 @@ const EnhancedButton = forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button
-        ref={elementRef as any}
+        ref={ref}
         className={cn(
           buttonVariants({
             variant,
@@ -323,18 +283,12 @@ const EnhancedButton = forwardRef<HTMLButtonElement, ButtonProps>(
             responsive,
           }),
           animationClass,
-          className,
-          // 无障碍测试状态样式
-          enableAccessibilityTesting && hasViolations && 'ring-2 ring-red-500 ring-opacity-50',
-          enableAccessibilityTesting && isTesting && 'animate-pulse'
+          className
         )}
         disabled={disabled || loading}
         aria-label={ariaLabel}
         aria-busy={loading}
         aria-disabled={disabled}
-        // 无障碍测试属性
-        data-a11y-testing={enableAccessibilityTesting}
-        data-a11y-violations={enableAccessibilityTesting ? violations.length : undefined}
         onClick={onClick}
         onKeyDown={handleKeyDown}
         onTouchStart={handleTouchStart}
@@ -390,23 +344,6 @@ const EnhancedButton = forwardRef<HTMLButtonElement, ButtonProps>(
           <span className="ml-2 text-xs opacity-60" aria-hidden="true">
             {shortcut}
           </span>
-        )}
-        
-        {/* 无障碍测试指示器 */}
-        {enableAccessibilityTesting && hasViolations && (
-          <span 
-            className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" 
-            aria-label={`发现 ${violations.length} 个无障碍问题`}
-            title={`发现 ${violations.length} 个无障碍问题`}
-          />
-        )}
-        
-        {enableAccessibilityTesting && isTesting && (
-          <span 
-            className="ml-2 w-2 h-2 bg-blue-500 rounded-full animate-pulse" 
-            aria-label="无障碍测试中..."
-            title="无障碍测试中..."
-          />
         )}
       </button>
     );

@@ -8,8 +8,6 @@
 import React, { forwardRef, useState, useMemo, useEffect, useRef } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import { designSystem, a11yTokens } from '@/lib/design-tokens';
-import { useComponentAccessibility } from '@/lib/accessibility/hooks';
 
 // 输入框变体配置
 const inputVariants = cva(
@@ -31,8 +29,7 @@ const inputVariants = cva(
   ],
   {
     variants: {
-      // 输入框类型
-      type: {
+      inputType: {
         text: '',
         password: '',
         email: '',
@@ -122,8 +119,7 @@ const inputVariants = cva(
         pill: 'rounded-full',
       },
       
-      // 输入框样式
-      style: {
+      appearance: {
         default: '',
         underline: [
           'border-0 border-b-2 rounded-none',
@@ -150,12 +146,12 @@ const inputVariants = cva(
     },
     
     defaultVariants: {
-      type: 'text',
+      inputType: 'text',
       size: 'md',
       validation: 'none',
       state: 'default',
       shape: 'default',
-      style: 'default',
+      appearance: 'default',
       responsive: 'default',
     },
   }
@@ -215,6 +211,8 @@ export interface InputProps
   
   // 防抖时间 (ms)
   debounceMs?: number;
+
+  loading?: boolean;
   
   // 自定义样式
   className?: string;
@@ -227,15 +225,6 @@ export interface InputProps
   
   // 消息类名
   messageClassName?: string;
-  
-  // 无障碍测试选项
-  enableAccessibilityTesting?: boolean;
-  
-  // 对比度要求 (默认: 4.5:1)
-  contrastRatio?: number;
-  
-  // 无障碍测试回调
-  onAccessibilityViolation?: (violations: any[]) => void;
 }
 
 // 增强输入框组件
@@ -244,11 +233,12 @@ const EnhancedInput = forwardRef<HTMLInputElement, InputProps>(
     {
       className,
       type = 'text',
+      loading = false,
       size,
       validation,
       state,
       shape,
-      style,
+      appearance,
       responsive,
       label,
       description,
@@ -273,9 +263,6 @@ const EnhancedInput = forwardRef<HTMLInputElement, InputProps>(
       onFocus,
       disabled,
       readOnly,
-      enableAccessibilityTesting = false,
-      contrastRatio = 4.5,
-      onAccessibilityViolation,
       containerClassName,
       labelClassName,
       messageClassName,
@@ -291,41 +278,14 @@ const EnhancedInput = forwardRef<HTMLInputElement, InputProps>(
       type?: 'success' | 'error' | 'warning';
     }>({ valid: true });
     const [isFocused, setIsFocused] = useState<boolean>(false);
-    const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+    const [debounceTimer, setDebounceTimer] = useState<number | null>(null);
     
-    // 无障碍测试集成
-    const inputRef = useRef<HTMLInputElement>(null);
-    const elementRef = ref || inputRef;
-    
-    // 集成无障碍测试
-    const {
-      elementRef: accessibilityRef,
-      violations,
-      isTesting,
-      testComponent,
-      hasViolations,
-      contrastTest,
-      navigationTest,
-      screenReaderTest
-    } = useComponentAccessibility<HTMLInputElement>();
-
     // 同步外部值
     useEffect(() => {
       if (value !== undefined) {
         setInputValue(value as string);
       }
     }, [value]);
-
-    // 无障碍测试效果
-    useEffect(() => {
-      if (enableAccessibilityTesting && elementRef.current) {
-        testComponent().then(result => {
-          if (result?.hasViolations && onAccessibilityViolation) {
-            onAccessibilityViolation(result.violations);
-          }
-        });
-      }
-    }, [enableAccessibilityTesting, testComponent, onAccessibilityViolation]);
 
     // 验证函数
     const performValidation = (value: string) => {
@@ -342,10 +302,10 @@ const EnhancedInput = forwardRef<HTMLInputElement, InputProps>(
     // 防抖验证
     const debouncedValidation = (value: string) => {
       if (debounceTimer) {
-        clearTimeout(debounceTimer);
+        window.clearTimeout(debounceTimer);
       }
       
-      const timer = setTimeout(() => {
+      const timer = window.setTimeout(() => {
         performValidation(value);
       }, debounceMs);
       
@@ -438,20 +398,18 @@ const EnhancedInput = forwardRef<HTMLInputElement, InputProps>(
     // 输入框类名
     const inputClasses = cn(
       inputVariants({
-        type,
+        inputType:
+          type === 'datetime-local' ? 'datetime' : (type as any),
         size,
         validation: currentValidation,
         state: currentState,
         shape,
-        style,
+        appearance,
         responsive,
       }),
       {
         'pl-10': leftIcon, // 左侧图标间距
         'pr-10': rightIcon || clearable || (type === 'password' && showPasswordToggle), // 右侧图标间距
-        // 无障碍测试状态样式
-        'ring-2 ring-red-500 ring-opacity-50': enableAccessibilityTesting && hasViolations,
-        'animate-pulse': enableAccessibilityTesting && isTesting,
       },
       className
     );
@@ -507,7 +465,7 @@ const EnhancedInput = forwardRef<HTMLInputElement, InputProps>(
 
           {/* 输入框 */}
           <input
-            ref={elementRef as any}
+            ref={ref}
             type={inputType}
             value={inputValue}
             onChange={handleChange}
@@ -520,9 +478,6 @@ const EnhancedInput = forwardRef<HTMLInputElement, InputProps>(
             autoComplete={autoComplete}
             autoFocus={autoFocus}
             className={inputClasses}
-            // 无障碍测试属性
-            data-a11y-testing={enableAccessibilityTesting}
-            data-a11y-violations={enableAccessibilityTesting ? violations.length : undefined}
             {...props}
           />
 
@@ -585,20 +540,6 @@ const EnhancedInput = forwardRef<HTMLInputElement, InputProps>(
           </div>
         )}
         
-        {/* 无障碍测试指示器 */}
-        {enableAccessibilityTesting && hasViolations && (
-          <div className="mt-2 flex items-center text-xs text-red-600">
-            <span className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse" />
-            发现 {violations.length} 个无障碍问题
-          </div>
-        )}
-        
-        {enableAccessibilityTesting && isTesting && (
-          <div className="mt-2 flex items-center text-xs text-blue-600">
-            <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse" />
-            无障碍测试中...
-          </div>
-        )}
       </div>
     );
   }

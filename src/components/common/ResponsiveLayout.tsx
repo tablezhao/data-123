@@ -4,7 +4,7 @@
  * 提供响应式布局容器和组件，支持断点检测、条件渲染和响应式行为
  */
 
-import React, { ReactNode, useMemo } from 'react';
+import React, { ReactNode, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { 
   useResponsive, 

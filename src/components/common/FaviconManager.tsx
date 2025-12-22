@@ -9,46 +9,59 @@ export const FaviconManager = () => {
   const { faviconUrl } = useSettingsStore();
 
   useEffect(() => {
-    // 获取或创建 favicon 元素
-    let faviconElement = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
-    
+    if (!faviconUrl) return;
+    const iconLinks = Array.from(document.querySelectorAll('link[rel="icon"]')) as HTMLLinkElement[];
+    let faviconElement = iconLinks[0];
+
     if (!faviconElement) {
-      // 如果不存在，创建新元素
       faviconElement = document.createElement('link');
       faviconElement.rel = 'icon';
-      faviconElement.type = 'image/x-icon';
       document.head.appendChild(faviconElement);
     }
 
-    // 更新 favicon URL
-    if (faviconUrl) {
-      faviconElement.href = faviconUrl;
-      // 根据文件扩展名设置正确的 MIME 类型
-      if (faviconUrl.endsWith('.svg')) {
-        faviconElement.type = 'image/svg+xml';
-      } else if (faviconUrl.endsWith('.png')) {
-        faviconElement.type = 'image/png';
-      } else if (faviconUrl.endsWith('.ico')) {
-        faviconElement.type = 'image/x-icon';
-      }
-    } else {
-      // 使用默认 favicon
-      faviconElement.href = '/favicon.png';
-      faviconElement.type = 'image/png';
+    iconLinks.slice(1).forEach((el) => el.parentNode?.removeChild(el));
+
+    const nextFaviconHref = faviconUrl;
+    const nextFaviconAbsHref = new URL(nextFaviconHref, window.location.href).href;
+    if (faviconElement.href !== nextFaviconAbsHref) {
+      faviconElement.href = nextFaviconHref;
     }
 
-    // 同时更新 apple-touch-icon
-    let appleTouchIcon = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
-    
+    if (faviconUrl.endsWith('.svg')) {
+      faviconElement.type = 'image/svg+xml';
+    } else if (faviconUrl.endsWith('.png')) {
+      faviconElement.type = 'image/png';
+    } else if (faviconUrl.endsWith('.ico')) {
+      faviconElement.type = 'image/x-icon';
+    }
+
+    const appleLinks = Array.from(
+      document.querySelectorAll('link[rel="apple-touch-icon"]')
+    ) as HTMLLinkElement[];
+    let appleTouchIcon = appleLinks[0];
+
     if (!appleTouchIcon) {
       appleTouchIcon = document.createElement('link');
       appleTouchIcon.rel = 'apple-touch-icon';
       document.head.appendChild(appleTouchIcon);
     }
 
-    appleTouchIcon.href = faviconUrl || '/favicon.png';
+    appleLinks.slice(1).forEach((el) => el.parentNode?.removeChild(el));
+
+    const appleHref = faviconUrl.endsWith('.png') ||
+      faviconUrl.endsWith('.jpg') ||
+      faviconUrl.endsWith('.jpeg') ||
+      faviconUrl.endsWith('.webp')
+        ? faviconUrl
+        : '/favicon.png';
+
+    const appleAbsHref = new URL(appleHref, window.location.href).href;
+    if (appleTouchIcon.href !== appleAbsHref) {
+      appleTouchIcon.href = appleHref;
+    }
+
     appleTouchIcon.sizes = '180x180';
-    appleTouchIcon.type = faviconUrl?.endsWith('.png') || !faviconUrl ? 'image/png' : 'image/x-icon';
+    appleTouchIcon.type = 'image/png';
   }, [faviconUrl]);
 
   return null;

@@ -179,7 +179,7 @@ export default function CategoryManagement() {
       setLoading(true);
       // 批量更新分类可见性
       const updatePromises = Array.from(selectedCategories).map(id => 
-        updateCategory(id, { is_visible })
+        updateCategory(id, { is_visible: isVisible })
       );
       await Promise.all(updatePromises);
       toast.success(`已${isVisible ? '显示' : '隐藏'}选中的${selectedCategories.size}个分类`);

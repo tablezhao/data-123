@@ -5,7 +5,8 @@
  * 集成色彩系统、排版系统、间距系统等设计规范
  */
 
-import { designSystem, colorTokens, typographyTokens, spacingTokens, shadowTokens, animationTokens } from './design-tokens';
+import { colorTokens, typographyTokens, spacingTokens, shadowTokens, animationTokens } from './design-tokens';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // 主题模式类型定义
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -13,10 +14,10 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 // 主题配置接口
 export interface ThemeConfig {
   mode: ThemeMode;
-  colors: typeof colorTokens;
+  colors: Record<string, any>;
   typography: typeof typographyTokens;
   spacing: typeof spacingTokens;
-  shadows: typeof shadowTokens;
+  shadows: Record<string, any>;
   animations: typeof animationTokens;
   components: Record<string, any>;
 }
@@ -59,12 +60,6 @@ export const lightTheme: ThemeConfig = {
       dark: 'hsl(210, 20%, 70%)',        // 深色边框
       focus: colorTokens.primary[500],   // 焦点边框
     },
-  },
-  shadows: {
-    ...shadowTokens,
-    // 亮色模式特定阴影
-    card: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-    hover: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
   },
 };
 
@@ -109,12 +104,6 @@ export const darkTheme: ThemeConfig = {
       ...colorTokens.error,
       500: 'hsl(0, 84%, 70%)', // 提高亮度
     },
-  },
-  shadows: {
-    ...shadowTokens,
-    // 暗色模式特定阴影
-    card: '0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3)',
-    hover: '0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3)',
   },
 };
 
@@ -212,44 +201,44 @@ export class ThemeManager {
       if (typeof colors === 'object') {
         Object.entries(colors).forEach(([shade, value]) => {
           const cssVar = `--color-${colorGroup}-${shade}`;
-          root.style.setProperty(cssVar, value as string);
+          root.style.setProperty(cssVar, String(value));
         });
       } else {
         const cssVar = `--color-${colorGroup}`;
-        root.style.setProperty(cssVar, colors as string);
+        root.style.setProperty(cssVar, String(colors));
       }
     });
 
     // 应用排版变量
     Object.entries(theme.typography.fontSize).forEach(([size, value]) => {
-      root.style.setProperty(`--font-size-${size}`, value);
+      root.style.setProperty(`--font-size-${size}`, String(value));
     });
 
     Object.entries(theme.typography.fontWeight).forEach(([weight, value]) => {
-      root.style.setProperty(`--font-weight-${weight}`, value);
+      root.style.setProperty(`--font-weight-${weight}`, String(value));
     });
 
     Object.entries(theme.typography.lineHeight).forEach(([height, value]) => {
-      root.style.setProperty(`--line-height-${height}`, value);
+      root.style.setProperty(`--line-height-${height}`, String(value));
     });
 
     // 应用间距变量
     Object.entries(theme.spacing).forEach(([space, value]) => {
-      root.style.setProperty(`--spacing-${space}`, value);
+      root.style.setProperty(`--spacing-${space}`, String(value));
     });
 
     // 应用阴影变量
     Object.entries(theme.shadows).forEach(([shadow, value]) => {
-      root.style.setProperty(`--shadow-${shadow}`, value);
+      root.style.setProperty(`--shadow-${shadow}`, String(value));
     });
 
     // 应用动画变量
     Object.entries(theme.animations.duration).forEach(([duration, value]) => {
-      root.style.setProperty(`--duration-${duration}`, value);
+      root.style.setProperty(`--duration-${duration}`, String(value));
     });
 
     Object.entries(theme.animations.easing).forEach(([easing, value]) => {
-      root.style.setProperty(`--ease-${easing}`, value);
+      root.style.setProperty(`--ease-${easing}`, String(value));
     });
 
     // 设置主题类名
@@ -264,11 +253,11 @@ export function useTheme(): {
   setTheme: (mode: ThemeMode) => void;
   themeMode: ThemeMode;
 } {
-  const [theme, setThemeState] = React.useState<ThemeConfig>(lightTheme);
-  const [themeMode, setThemeModeState] = React.useState<ThemeMode>('light');
-  const themeManagerRef = React.useRef<ThemeManager>();
+  const [theme, setThemeState] = useState<ThemeConfig>(lightTheme);
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('light');
+  const themeManagerRef = useRef<ThemeManager | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!themeManagerRef.current) {
       themeManagerRef.current = new ThemeManager();
       const savedMode = themeManagerRef.current.loadThemePreference();
@@ -288,7 +277,7 @@ export function useTheme(): {
     };
   }, []);
 
-  const setTheme = React.useCallback((mode: ThemeMode) => {
+  const setTheme = useCallback((mode: ThemeMode) => {
     if (themeManagerRef.current) {
       themeManagerRef.current.setTheme(mode);
     }

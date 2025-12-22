@@ -167,10 +167,12 @@ export class ResourceMonitor {
     switch (initiatorType) {
       case 'script':
       case 'link':
-        const url = new URL(entry.name);
-        if (url.pathname.endsWith('.css')) return 'stylesheet';
-        if (url.pathname.endsWith('.js')) return 'script';
-        return 'other';
+        {
+          const url = new URL(entry.name);
+          if (url.pathname.endsWith('.css')) return 'stylesheet';
+          if (url.pathname.endsWith('.js')) return 'script';
+          return 'other';
+        }
       case 'img':
         return 'image';
       case 'css':
@@ -179,17 +181,18 @@ export class ResourceMonitor {
       case 'fetch':
         return 'fetch';
       default:
-        // Determine type from file extension
-        const url = new URL(entry.name);
-        const pathname = url.pathname.toLowerCase();
-        
-        if (pathname.match(/\.(woff|woff2|ttf|otf|eot)$/)) return 'font';
-        if (pathname.match(/\.(jpg|jpeg|png|gif|svg|webp)$/)) return 'image';
-        if (pathname.endsWith('.css')) return 'stylesheet';
-        if (pathname.endsWith('.js')) return 'script';
-        if (pathname.match(/\/api\//)) return 'fetch';
-        
-        return 'other';
+        {
+          const url = new URL(entry.name);
+          const pathname = url.pathname.toLowerCase();
+          
+          if (pathname.match(/\.(woff|woff2|ttf|otf|eot)$/)) return 'font';
+          if (pathname.match(/\.(jpg|jpeg|png|gif|svg|webp)$/)) return 'image';
+          if (pathname.endsWith('.css')) return 'stylesheet';
+          if (pathname.endsWith('.js')) return 'script';
+          if (pathname.match(/\/api\//)) return 'fetch';
+          
+          return 'other';
+        }
     }
   }
 

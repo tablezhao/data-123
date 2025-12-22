@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { getSiteSettings } from '@/services/settingsService';
 
 interface SettingsState {
   siteName: string;
@@ -27,6 +26,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   loadSettings: async () => {
     try {
+      const { getSiteSettings } = await import('@/services/settingsService');
       const settings = await getSiteSettings();
       set({
         siteName: (settings.site_name as string) || '数据合规123导航',

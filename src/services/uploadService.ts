@@ -57,14 +57,19 @@ export async function uploadImage(file: File, options: UploadOptions): Promise<U
 
     if (error) {
       console.error('Supabase 上传错误详情:', error);
+
+      const errorCode = (error as unknown as { code?: string | number; statusCode?: string | number; status?: string | number }).code
+        ?? (error as unknown as { statusCode?: string | number }).statusCode
+        ?? (error as unknown as { status?: string | number }).status;
+      const normalizedCode = errorCode == null ? '' : String(errorCode);
       
       // 处理特定的错误类型
-      if (error.code === '404' || error.message.includes('Bucket not found')) {
+      if (normalizedCode === '404' || error.message.includes('Bucket not found')) {
         return {
           success: false,
           error: `存储桶不存在: ${bucketName}。请确保 Supabase 项目中已创建该存储桶并配置正确的权限`,
         };
-      } else if (error.code === '403') {
+      } else if (normalizedCode === '403') {
         return {
           success: false,
           error: `无权限访问存储桶: ${bucketName}。请检查存储桶的访问权限配置`,

@@ -7,8 +7,7 @@ import {
   searchWebsites,
   addFavorite,
   removeFavorite,
-  isFavorited,
-  areFavorited,
+  getAllFavoriteIds,
   incrementWebsiteClick,
   recordVisit,
 } from '@/db/api';
@@ -35,43 +34,51 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
 
-  const { siteName, siteDescription, showFeaturedSection } = useSettingsStore();
+  const siteName = useSettingsStore((s) => s.siteName);
+  const siteDescription = useSettingsStore((s) => s.siteDescription);
+  const showFeaturedSection = useSettingsStore((s) => s.showFeaturedSection);
 
   useEffect(() => {
-    loadData();
-  }, [user]);
+    let active = true;
+    void loadData(() => active, user?.id ?? null);
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
 
-  async function loadData() {
+  async function loadData(isActive: () => boolean, userId: string | null) {
+    setLoading(true);
+
     try {
-      setLoading(true);
-      const [categoriesData, websitesData, featuredData] = await Promise.all([
+      const promises: Promise<any>[] = [
         getCategories(),
         getWebsites(),
         getFeaturedWebsites(8),
-      ]);
+      ];
+
+      if (userId) {
+        promises.push(getAllFavoriteIds());
+      }
+
+      const results = await Promise.all(promises);
+      
+      const categoriesData = results[0];
+      const websitesData = results[1];
+      const featuredData = results[2];
+      const favoriteIdsData = userId && results[3] ? results[3] : new Set<string>();
+
+      if (!isActive()) return;
 
       setCategories(categoriesData);
       setWebsites(websitesData);
       setFeaturedWebsites(featuredData);
-
-      // 加载收藏状态
-      if (user) {
-        // 使用批量获取收藏状态的 API
-        const websiteIds = websitesData.map(w => w.id);
-        const favoriteStatuses = await areFavorited(websiteIds);
-        const favIds = new Set(
-          websitesData.filter(w => favoriteStatuses[w.id]).map(w => w.id)
-        );
-        setFavoriteIds(favIds);
-      } else {
-        // 未登录时清空收藏状态
-        setFavoriteIds(new Set());
-      }
+      setFavoriteIds(favoriteIdsData);
+      setLoading(false);
     } catch (error) {
+      if (!isActive()) return;
       console.error('加载数据失败:', error);
       toast.error('加载数据失败');
-      setLoading(false);
-    } finally {
+      setFavoriteIds(new Set());
       setLoading(false);
     }
   }
