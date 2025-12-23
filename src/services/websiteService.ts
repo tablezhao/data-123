@@ -17,20 +17,6 @@ export async function getWebsites(categoryId?: string): Promise<Website[]> {
   return Array.isArray(data) ? data : [];
 }
 
-// 获取热门网站
-export async function getFeaturedWebsites(limit = 10): Promise<Website[]> {
-  const { data, error } = await supabase
-    .from('websites')
-    .select('*, category:categories(*)')
-    .eq('is_featured', true)
-    .eq('is_visible', true)
-    .order('click_count', { ascending: false })
-    .limit(limit);
-
-  if (error) throw error;
-  return Array.isArray(data) ? data : [];
-}
-
 // 获取单个网站
 export async function getWebsite(id: string): Promise<Website | null> {
   const { data, error } = await supabase
@@ -103,7 +89,7 @@ export async function searchWebsites(query: string): Promise<Website[]> {
     .select('*, category:categories(*)')
     .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
     .eq('is_visible', true)
-    .order('click_count', { ascending: false })
+    .order('sort_order', { ascending: true })
     .limit(20);
 
   if (error) throw error;
@@ -118,6 +104,16 @@ export async function batchDeleteWebsites(ids: string[]): Promise<void> {
     .in('id', ids);
 
   if (error) throw error;
+}
+
+// 批量更新网站排序
+export async function batchUpdateWebsiteSortOrder(updates: { id: string; sort_order: number }[]): Promise<void> {
+  // 暂时使用Promise.all并行更新，后续可优化为RPC调用
+  await Promise.all(
+    updates.map(update => 
+      supabase.from('websites').update({ sort_order: update.sort_order }).eq('id', update.id)
+    )
+  );
 }
 
 // 批量更新网站分类

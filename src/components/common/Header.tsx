@@ -67,11 +67,6 @@ export const Header = ({ onSignOut }: HeaderProps) => {
                   {isAdmin && <Badge className="ml-2">管理员</Badge>}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/favorites">
-                    我的收藏
-                  </Link>
-                </DropdownMenuItem>
                 {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin">

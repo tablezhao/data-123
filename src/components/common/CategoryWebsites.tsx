@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { WebsiteCard } from './WebsiteCard';
+import { CompactWebsiteCard } from './CompactWebsiteCard';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 import type { Category, Website } from '@/types';
 
 interface CategoryWebsitesProps {
@@ -25,6 +27,24 @@ export const CategoryWebsites = ({
   onWebsiteClick, 
   onToggleFavorite 
 }: CategoryWebsitesProps) => {
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Responsive: Check mobile state
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsCollapsed(true);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const { visibleCategories, visibleCategoryById } = useMemo(() => {
     const visibleCategories = categories.filter((category) => category.is_visible);
     const visibleCategoryById: Record<string, Category> = {};
@@ -61,91 +81,163 @@ export const CategoryWebsites = ({
   }, [displayWebsites, loading, selectedCategory, visibleCategories, websitesByCategory]);
 
   return (
-    <section>
-      <Tabs value={selectedCategory} onValueChange={onCategoryChange}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="all">全部</TabsTrigger>
-          {visibleCategories.map((category) => (
-            <TabsTrigger key={category.id} value={category.id}>
-              {category.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent value={selectedCategory}>
-          {loading ? (
-            <div className="space-y-6">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="space-y-3">
-                  <Skeleton className="h-8 w-48 bg-muted" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Array.from({ length: 6 }).map((_, j) => (
-                      <Skeleton key={j} className="h-24 bg-muted" />
-                    ))}
-                  </div>
+    <section className="flex flex-col md:flex-row gap-0 md:gap-6 relative min-h-[600px]">
+      <Tabs value={selectedCategory} onValueChange={onCategoryChange} orientation="vertical" className="flex flex-col md:flex-row w-full gap-0 md:gap-8">
+        
+        {/* Sidebar Container */}
+        <div 
+            className={`
+                shrink-0 transition-all duration-300 ease-in-out
+                
+                sticky top-16 z-40 w-full overflow-x-auto border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60
+                flex flex-row items-center px-4 py-3 gap-2 scrollbar-hide
+                
+                md:bg-card/50 md:rounded-2xl md:border md:border-border/50 md:py-4 md:gap-4
+                md:sticky md:top-24 md:self-start md:max-h-[calc(100vh-8rem)] md:overflow-y-auto md:scrollbar-none
+                md:flex-col md:w-auto md:border-b-0
+                
+                ${!isMobile && (isCollapsed ? 'md:w-[68px] md:px-2' : 'md:w-60 md:px-4')}
+            `}
+        >
+            {/* Toggle Header (Desktop Only) */}
+            {!isMobile && (
+                <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} mb-2 h-8`}>
+                    {!isCollapsed && <span className="text-sm font-semibold text-muted-foreground pl-2">分类导航</span>}
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                    >
+                        {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                    </Button>
                 </div>
-              ))}
-            </div>
-          ) : selectedCategory === 'all' ? (
-            <div className="space-y-8">
-              {visibleCategories.map((category) => {
-                const categoryWebsites = websitesByCategory[category.id] || [];
-                if (categoryWebsites.length === 0) return null;
+            )}
 
-                return (
-                  <div 
-                    key={category.id}
-                    style={{ 
-                      contentVisibility: 'auto', 
-                      containIntrinsicSize: 'auto 300px' // 预估高度，防止滚动条跳动
-                    }}
-                  >
-                    <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                      {category.icon && <span>{category.icon}</span>}
-                      {category.name}
-                      <span className="text-sm text-muted-foreground">
-                        ({categoryWebsites.length})
-                      </span>
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {categoryWebsites.map((website) => (
-                        <WebsiteCard
-                          key={website.id}
-                          website={website}
-                          isFavorite={favoriteIds.has(website.id)}
-                          onWebsiteClick={onWebsiteClick}
-                          onToggleFavorite={onToggleFavorite}
-                          showCategory={false}
-                          showClickCount={false}
-                        />
-                      ))}
+            {/* Tabs List */}
+            <TabsList className={`
+                bg-transparent p-0
+                flex flex-row w-max h-auto space-x-2
+                md:flex-col md:w-full md:space-x-0 md:space-y-1 md:items-stretch
+            `}>
+                <TabsTrigger 
+                    value="all"
+                    className={`
+                        relative flex items-center transition-all duration-200
+                        
+                        justify-center px-3 py-1.5 rounded-full border text-sm font-medium whitespace-nowrap
+                        border-border bg-card
+                        data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
+                        
+                        md:justify-start md:py-3 md:rounded-xl md:border-transparent md:bg-transparent
+                        md:data-[state=active]:bg-primary md:data-[state=active]:text-primary-foreground md:data-[state=active]:shadow-md
+                        md:hover:bg-muted md:text-muted-foreground
+                        
+                        ${!isMobile && isCollapsed ? 'md:justify-center md:px-0' : 'md:px-4 md:gap-3'}
+                    `}
+                    title={(!isMobile && isCollapsed) ? "全部" : undefined}
+                >
+                    <LayoutGrid className={`shrink-0 ${isMobile ? 'w-4 h-4 mr-1.5' : 'w-5 h-5'}`} />
+                    {(isMobile || !isCollapsed) && <span className="truncate">全部</span>}
+                </TabsTrigger>
+                
+                {visibleCategories.map((category) => (
+                    <TabsTrigger 
+                        key={category.id}
+                        value={category.id}
+                        className={`
+                            relative flex items-center transition-all duration-200
+                            
+                            justify-center px-3 py-1.5 rounded-full border text-sm font-medium whitespace-nowrap
+                            border-border bg-card
+                            data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
+                            
+                            md:justify-start md:py-3 md:rounded-xl md:border-transparent md:bg-transparent
+                            md:data-[state=active]:bg-primary md:data-[state=active]:text-primary-foreground md:data-[state=active]:shadow-md
+                            md:hover:bg-muted md:text-muted-foreground
+                            
+                            ${!isMobile && isCollapsed ? 'md:justify-center md:px-0' : 'md:px-4 md:gap-3'}
+                        `}
+                        title={(!isMobile && isCollapsed) ? category.name : undefined}
+                    >
+                        {category.icon ? (
+                            <span className={`shrink-0 flex items-center justify-center leading-none ${isMobile ? 'w-4 h-4 mr-1.5 text-base' : 'w-5 h-5 text-lg'}`}>{category.icon}</span>
+                        ) : (
+                            <div className={`shrink-0 rounded-full bg-muted-foreground/20 ${isMobile ? 'w-4 h-4 mr-1.5' : 'w-5 h-5'}`} />
+                        )}
+                        {(isMobile || !isCollapsed) && <span className="truncate">{category.name}</span>}
+                    </TabsTrigger>
+                ))}
+            </TabsList>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 min-w-0 md:pt-0 pt-4 px-4 md:px-0">
+            <TabsContent value={selectedCategory} className="mt-0 space-y-8 animate-in fade-in-50 duration-300">
+                {loading ? (
+                    <div className="space-y-8">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="space-y-4">
+                        <Skeleton className="h-7 w-32 bg-muted rounded-lg" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                            {Array.from({ length: 5 }).map((_, j) => (
+                            <Skeleton key={j} className="h-[68px] bg-card border border-border rounded-xl" />
+                            ))}
+                        </div>
+                        </div>
+                    ))}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {(displayWebsites || []).map((website) => (
-                <WebsiteCard
-                  key={website.id}
-                  website={website}
-                  isFavorite={favoriteIds.has(website.id)}
-                  onWebsiteClick={onWebsiteClick}
-                  onToggleFavorite={onToggleFavorite}
-                  showCategory={false}
-                  showClickCount={false}
-                />
-              ))}
-            </div>
-          )}
+                ) : selectedCategory === 'all' ? (
+                    <div className="space-y-12">
+                    {visibleCategories.map((category) => {
+                        const categoryWebsites = websitesByCategory[category.id] || [];
+                        if (categoryWebsites.length === 0) return null;
 
-          {!hasAnyWebsites && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">暂无网站</p>
-            </div>
-          )}
-        </TabsContent>
+                        return (
+                        <div 
+                            key={category.id}
+                            className="scroll-mt-24 md:scroll-mt-20"
+                        >
+                            <div className="flex items-center gap-3 mb-4">
+                                {category.icon && <span className="text-xl">{category.icon}</span>}
+                                <h3 className="text-lg font-bold text-foreground">{category.name}</h3>
+                                <span className="px-2 py-0.5 rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                                    {categoryWebsites.length}
+                                </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                            {categoryWebsites.map((website) => (
+                                <CompactWebsiteCard
+                                key={website.id}
+                                website={website}
+                                onWebsiteClick={onWebsiteClick}
+                                />
+                            ))}
+                            </div>
+                        </div>
+                        );
+                    })}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {(displayWebsites || []).map((website) => (
+                        <CompactWebsiteCard
+                        key={website.id}
+                        website={website}
+                        onWebsiteClick={onWebsiteClick}
+                        />
+                    ))}
+                    </div>
+                )}
+
+                {!hasAnyWebsites && (
+                    <div className="text-center py-20 bg-muted/50 rounded-2xl border border-dashed border-border">
+                    <p className="text-muted-foreground font-medium">暂无网站</p>
+                    </div>
+                )}
+            </TabsContent>
+        </div>
       </Tabs>
     </section>
   );

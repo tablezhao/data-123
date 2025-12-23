@@ -32,7 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Eye, EyeOff, Upload, ExternalLink } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Upload, ExternalLink, RefreshCw, ArrowUpDown, Save, GripVertical, X } from 'lucide-react';
 import {
   getCategories,
   getWebsites,
@@ -40,6 +40,7 @@ import {
   updateWebsite,
   deleteWebsite,
   batchDeleteWebsites,
+  batchUpdateWebsiteSortOrder,
 } from '@/db/api';
 import { uploadImage } from '@/lib/upload';
 import type { Category, Website, CreateWebsiteInput, UpdateWebsiteInput } from '@/types';
@@ -66,6 +67,9 @@ export default function WebsiteManagement() {
   const [selectedWebsites, setSelectedWebsites] = useState<Set<string>>(new Set());
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [isFetchingLogo, setIsFetchingLogo] = useState(false);
+  const [isSortMode, setIsSortMode] = useState(false);
+  const [draggedItem, setDraggedItem] = useState<Website | null>(null);
   const [formData, setFormData] = useState<CreateWebsiteInput>({
     category_id: '',
     title: '',
@@ -139,7 +143,7 @@ export default function WebsiteManagement() {
         setUploadProgress(progress);
       });
 
-      setFormData({ ...formData, [field]: result.url });
+      setFormData(prev => ({ ...prev, [field]: result.url }));
 
       if (result.compressed) {
         toast.success(`图片已上传并压缩至 ${(file.size / 1024).toFixed(2)}KB`);
@@ -152,6 +156,80 @@ export default function WebsiteManagement() {
     } finally {
       setUploading(false);
       setUploadProgress(0);
+    }
+  }
+
+  async function autoFetchLogo(url: string) {
+    if (!url) return;
+    let domain = '';
+    try {
+      const urlToParse = url.startsWith('http') ? url : `https://${url}`;
+      const u = new URL(urlToParse);
+      domain = u.hostname;
+    } catch {
+      return;
+    }
+
+    if (isFetchingLogo) return;
+    setIsFetchingLogo(true);
+    toast.info('正在自动抓取网站Logo...');
+
+    try {
+      const targetUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+      let blob: Blob | null = null;
+
+      // Strategy 1: AllOrigins
+      try {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+        const res = await fetch(proxyUrl);
+        if (res.ok) blob = await res.blob();
+      } catch (e) {
+        console.warn('AllOrigins fetch failed', e);
+      }
+
+      // Strategy 2: CORSProxy.io
+      if (!blob) {
+        try {
+          const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+          const res = await fetch(proxyUrl);
+          if (res.ok) blob = await res.blob();
+        } catch (e) {
+          console.warn('CORSProxy fetch failed', e);
+        }
+      }
+
+      // Strategy 3: Icon Horse (Fallback)
+      if (!blob) {
+         try {
+             const iconUrl = `https://icon.horse/icon/${domain}`;
+             const res = await fetch(iconUrl);
+             if (res.ok) blob = await res.blob();
+         } catch(e) {
+             console.warn('Icon Horse fetch failed', e);
+         }
+      }
+
+      if (!blob || blob.size < 100) throw new Error('Fetch failed or image invalid');
+      
+      const file = new File([blob], `${domain}_favicon.png`, { type: blob.type });
+      
+      setUploading(true);
+      const result = await uploadImage(file);
+      
+      setFormData(prev => ({
+        ...prev,
+        favicon_url: result.url,
+        // Also set logo_url if empty as fallback
+        logo_url: prev.logo_url || result.url
+      }));
+      
+      toast.success('Logo抓取并保存成功');
+    } catch (error) {
+      console.error('Auto fetch failed:', error);
+      toast.error('自动抓取失败，请手动上传');
+    } finally {
+      setIsFetchingLogo(false);
+      setUploading(false);
     }
   }
 
@@ -241,6 +319,51 @@ export default function WebsiteManagement() {
       setSelectedWebsites(new Set(websites.map((w) => w.id)));
     }
   }
+  
+  // Sort Logic
+  async function handleSaveSort() {
+    try {
+      setLoading(true);
+      const updates = websites.map((w, index) => ({
+        id: w.id,
+        sort_order: (index + 1) * 10 
+      }));
+      await batchUpdateWebsiteSortOrder(updates);
+      toast.success('排序已保存');
+      setIsSortMode(false);
+      loadData();
+    } catch (error) {
+      console.error('保存排序失败:', error);
+      toast.error('保存排序失败');
+      setLoading(false);
+    }
+  }
+  
+  function handleDragStart(e: React.DragEvent, website: Website) {
+      if (!isSortMode) return;
+      setDraggedItem(website);
+      e.dataTransfer.effectAllowed = 'move';
+  }
+  
+  function handleDragOver(e: React.DragEvent, targetWebsite: Website) {
+      e.preventDefault();
+      if (!isSortMode || !draggedItem || draggedItem.id === targetWebsite.id) return;
+      
+      const newWebsites = [...websites];
+      const draggedIndex = newWebsites.findIndex(w => w.id === draggedItem.id);
+      const targetIndex = newWebsites.findIndex(w => w.id === targetWebsite.id);
+      
+      if (draggedIndex === -1 || targetIndex === -1) return;
+      
+      newWebsites.splice(draggedIndex, 1);
+      newWebsites.splice(targetIndex, 0, draggedItem);
+      
+      setWebsites(newWebsites);
+  }
+
+  function handleDragEnd() {
+    setDraggedItem(null);
+  }
 
   // 展平分类树
   function flattenCategories(cats: Category[]): Category[] {
@@ -265,21 +388,45 @@ export default function WebsiteManagement() {
             <CardDescription>管理导航网站链接</CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            {selectedWebsites.size > 0 && (
+            {isSortMode ? (
+              <>
+                <Button variant="outline" onClick={() => {
+                  setIsSortMode(false);
+                  loadData(); // Revert changes
+                }}>
+                  <X className="w-4 h-4 mr-2" />
+                  取消
+                </Button>
+                <Button onClick={handleSaveSort}>
+                  <Save className="w-4 h-4 mr-2" />
+                  保存排序
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" onClick={() => setIsSortMode(true)}>
+                <ArrowUpDown className="w-4 h-4 mr-2" />
+                调整排序
+              </Button>
+            )}
+            
+            {!isSortMode && selectedWebsites.size > 0 && (
               <Button variant="destructive" onClick={handleBatchDelete}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 删除选中 ({selectedWebsites.size})
               </Button>
             )}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => handleOpenDialog()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  添加网站
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <form onSubmit={handleSubmit}>
+            
+            {!isSortMode && (
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => handleOpenDialog()}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    添加网站
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    {/* Form content (same as before) */}
+                    <form onSubmit={handleSubmit}>
                   <DialogHeader>
                     <DialogTitle>{editingWebsite ? '编辑网站' : '添加网站'}</DialogTitle>
                     <DialogDescription>
@@ -319,14 +466,30 @@ export default function WebsiteManagement() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="url">网站URL *</Label>
-                      <Input
-                        id="url"
-                        type="url"
-                        value={formData.url}
-                        onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                        placeholder="https://example.com"
-                        required
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          id="url"
+                          type="url"
+                          value={formData.url}
+                          onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                          onBlur={(e) => autoFetchLogo(e.target.value)}
+                          placeholder="https://example.com"
+                          required
+                        />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="icon"
+                          onClick={() => autoFetchLogo(formData.url)}
+                          disabled={isFetchingLogo || !formData.url}
+                          title="重新抓取Logo"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${isFetchingLogo ? 'animate-spin' : ''}`} />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        输入网址后将自动抓取Logo，也可以点击右侧按钮重新抓取
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="description">描述</Label>
@@ -418,16 +581,6 @@ export default function WebsiteManagement() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <Switch
-                        id="is_featured"
-                        checked={formData.is_featured}
-                        onCheckedChange={(checked) =>
-                          setFormData({ ...formData, is_featured: checked })
-                        }
-                      />
-                      <Label htmlFor="is_featured">热门推荐</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
                         id="is_visible"
                         checked={formData.is_visible}
                         onCheckedChange={(checked) =>
@@ -446,8 +599,9 @@ export default function WebsiteManagement() {
                     </Button>
                   </DialogFooter>
                 </form>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -463,27 +617,42 @@ export default function WebsiteManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">
-                  <Checkbox
-                    checked={selectedWebsites.size === websites.length}
-                    onCheckedChange={toggleSelectAll}
-                  />
+                    {isSortMode ? (
+                        <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                        <Checkbox
+                            checked={selectedWebsites.size === websites.length}
+                            onCheckedChange={toggleSelectAll}
+                        />
+                    )}
                 </TableHead>
                 <TableHead>网站</TableHead>
                 <TableHead>分类</TableHead>
                 <TableHead>URL</TableHead>
-                <TableHead>访问量</TableHead>
+                <TableHead>{isSortMode ? '排序值' : '访问量'}</TableHead>
                 <TableHead>状态</TableHead>
-                <TableHead className="text-right">操作</TableHead>
+                {!isSortMode && <TableHead className="text-right">操作</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {websites.map((website) => (
-                <TableRow key={website.id}>
+                <TableRow 
+                    key={website.id}
+                    draggable={isSortMode}
+                    onDragStart={(e) => handleDragStart(e, website)}
+                    onDragOver={(e) => handleDragOver(e, website)}
+                    onDragEnd={handleDragEnd}
+                    className={isSortMode ? 'cursor-move hover:bg-muted/50 transition-colors' : ''}
+                >
                   <TableCell>
-                    <Checkbox
-                      checked={selectedWebsites.has(website.id)}
-                      onCheckedChange={() => toggleSelectWebsite(website.id)}
-                    />
+                    {isSortMode ? (
+                        <GripVertical className="w-4 h-4 text-muted-foreground cursor-move" />
+                    ) : (
+                        <Checkbox
+                            checked={selectedWebsites.has(website.id)}
+                            onCheckedChange={() => toggleSelectWebsite(website.id)}
+                        />
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -498,7 +667,6 @@ export default function WebsiteManagement() {
                         />
                       )}
                       <span className="font-medium">{website.title}</span>
-                      {website.is_featured && <Badge variant="default">热门</Badge>}
                     </div>
                   </TableCell>
                   <TableCell>{website.category?.name}</TableCell>
@@ -514,7 +682,13 @@ export default function WebsiteManagement() {
                       <ExternalLink className="w-3 h-3 flex-shrink-0" />
                     </a>
                   </TableCell>
-                  <TableCell>{website.click_count}</TableCell>
+                  <TableCell>
+                      {isSortMode ? (
+                          <span className="font-mono">{website.sort_order}</span>
+                      ) : (
+                          website.click_count
+                      )}
+                  </TableCell>
                   <TableCell>
                     {website.is_visible ? (
                       <Badge variant="default">可见</Badge>
@@ -522,38 +696,40 @@ export default function WebsiteManagement() {
                       <Badge variant="secondary">隐藏</Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => toggleVisibility(website)}
-                      >
-                        {website.is_visible ? (
-                          <Eye className="w-4 h-4" />
-                        ) : (
-                          <EyeOff className="w-4 h-4" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleOpenDialog(website)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setWebsiteToDelete(website);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {!isSortMode && (
+                    <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleVisibility(website)}
+                        >
+                            {website.is_visible ? (
+                            <Eye className="w-4 h-4" />
+                            ) : (
+                            <EyeOff className="w-4 h-4" />
+                            )}
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenDialog(website)}
+                        >
+                            <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                            setWebsiteToDelete(website);
+                            setDeleteDialogOpen(true);
+                            }}
+                        >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                        </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

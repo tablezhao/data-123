@@ -60,8 +60,6 @@ export default function CategoryManagement() {
   });
   // 热门推荐分类管理相关状态
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
-  // 从settingsStore获取热门推荐模块的显示状态
-  const { showFeaturedSection, toggleFeaturedSection } = useSettingsStore();
 
   useEffect(() => {
     loadCategories();
@@ -294,32 +292,6 @@ export default function CategoryManagement() {
         </div>
       </CardHeader>
       <CardContent>
-        {/* 热门推荐模块控制 */}
-        <Card className="mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">首页热门推荐模块管理</CardTitle>
-            <CardDescription>控制首页热门推荐模块的显示状态</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  开启后，首页将显示热门推荐模块，展示热门网站
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={showFeaturedSection}
-                  onCheckedChange={toggleFeaturedSection}
-                />
-                <span className="text-sm font-medium">
-                  {showFeaturedSection ? '已开启' : '已关闭'}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* 批量操作区域 */}
         {flatCategories.length > 0 && (
           <div className="mb-4 flex items-center justify-between">

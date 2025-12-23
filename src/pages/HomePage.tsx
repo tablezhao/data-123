@@ -1,16 +1,17 @@
 import { useEffect, useState, useMemo } from 'react';
 import { toast } from 'sonner';
-import {
-  getCategories,
-  getWebsites,
-  getFeaturedWebsites,
-  searchWebsites,
-  addFavorite,
-  removeFavorite,
-  getAllFavoriteIds,
-  incrementWebsiteClick,
-  recordVisit,
-} from '@/db/api';
+import { getCategories } from '@/services/categoryService';
+import { 
+  getWebsites, 
+  searchWebsites, 
+  incrementWebsiteClick 
+} from '@/services/websiteService';
+import { 
+  addFavorite, 
+  removeFavorite, 
+  getAllFavoriteIds 
+} from '@/services/favoritesService';
+import { recordVisit } from '@/services/statsService';
 import { useAuthStore } from '@/stores/authStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import type { Category, Website } from '@/types';
@@ -19,7 +20,6 @@ import type { Category, Website } from '@/types';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
 import { SearchBar } from '@/components/common/SearchBar';
-import { FeaturedWebsites } from '@/components/common/FeaturedWebsites';
 import { CategoryWebsites } from '@/components/common/CategoryWebsites';
 import PageMeta from '@/components/common/PageMeta';
 
@@ -27,7 +27,6 @@ export default function HomePage() {
   const { user, signOut } = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [websites, setWebsites] = useState<Website[]>([]);
-  const [featuredWebsites, setFeaturedWebsites] = useState<Website[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Website[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -36,7 +35,6 @@ export default function HomePage() {
 
   const siteName = useSettingsStore((s) => s.siteName);
   const siteDescription = useSettingsStore((s) => s.siteDescription);
-  const showFeaturedSection = useSettingsStore((s) => s.showFeaturedSection);
 
   useEffect(() => {
     let active = true;
@@ -53,7 +51,6 @@ export default function HomePage() {
       const promises: Promise<any>[] = [
         getCategories(),
         getWebsites(),
-        getFeaturedWebsites(8),
       ];
 
       if (userId) {
@@ -64,14 +61,12 @@ export default function HomePage() {
       
       const categoriesData = results[0];
       const websitesData = results[1];
-      const featuredData = results[2];
-      const favoriteIdsData = userId && results[3] ? results[3] : new Set<string>();
+      const favoriteIdsData = userId && results[2] ? results[2] : new Set<string>();
 
       if (!isActive()) return;
 
       setCategories(categoriesData);
       setWebsites(websitesData);
-      setFeaturedWebsites(featuredData);
       setFavoriteIds(favoriteIdsData);
       setLoading(false);
     } catch (error) {
@@ -167,17 +162,6 @@ export default function HomePage() {
         <div className="mb-8">
           <SearchBar query={searchQuery} onSearch={handleSearch} />
         </div>
-
-        {/* 热门推荐 */}
-        {!searchQuery && showFeaturedSection && (
-          <FeaturedWebsites
-            websites={featuredWebsites}
-            loading={loading}
-            favoriteIds={favoriteIds}
-            onWebsiteClick={handleWebsiteClick}
-            onToggleFavorite={toggleFavorite}
-          />
-        )}
 
         {/* 分类导航 */}
         <CategoryWebsites

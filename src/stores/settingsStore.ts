@@ -7,11 +7,9 @@ interface SettingsState {
   footerText: string;
   logoUrl: string | null;
   faviconUrl: string | null;
-  showFeaturedSection: boolean;
   loading: boolean;
   loadSettings: () => Promise<void>;
   refreshSettings: () => Promise<void>;
-  toggleFeaturedSection: () => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -21,7 +19,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   footerText: '© 2025 数据合规123导航. All rights reserved.',
   logoUrl: null,
   faviconUrl: null,
-  showFeaturedSection: true,
   loading: true,
 
   loadSettings: async () => {
@@ -39,7 +36,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         footerText: (settings.footer_text as string) || '© 2025 数据合规123导航. All rights reserved.',
         logoUrl: (settings.logo_url as string) || null,
         faviconUrl: (settings.favicon_url as string) || null,
-        showFeaturedSection: typeof settings.show_featured_section === 'boolean' ? settings.show_featured_section : true,
         loading: false,
       });
     } catch (error) {
@@ -50,26 +46,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   refreshSettings: async () => {
     await useSettingsStore.getState().loadSettings();
-  },
-
-  toggleFeaturedSection: async () => {
-    try {
-      const state = useSettingsStore.getState();
-      const newShowFeaturedSection = !state.showFeaturedSection;
-      
-      // 更新本地状态
-      set({ showFeaturedSection: newShowFeaturedSection });
-      
-      // 导入需要的函数
-      const { updateSiteSetting } = await import('@/services/settingsService');
-      
-      // 更新服务器设置
-      await updateSiteSetting('show_featured_section', newShowFeaturedSection);
-    } catch (error) {
-      console.error('切换热门推荐模块显示状态失败:', error);
-      // 恢复原来的状态
-      set((state) => ({ showFeaturedSection: !state.showFeaturedSection }));
-    }
   },
 }));
 
