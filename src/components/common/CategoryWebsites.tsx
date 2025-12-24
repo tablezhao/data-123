@@ -17,6 +17,87 @@ interface CategoryWebsitesProps {
   onToggleFavorite: (websiteId: string, e: React.MouseEvent) => void;
 }
 
+import { useRef, useLayoutEffect } from 'react';
+
+interface ExpandableWebsiteGridProps {
+  websites: Website[];
+  isExpanded: boolean;
+  forceExpand: boolean;
+  isMobile: boolean;
+  mobileExpandedId: string | null;
+  setMobileExpandedId: React.Dispatch<React.SetStateAction<string | null>>;
+  onWebsiteClick: (website: Website) => void;
+}
+
+const ExpandableWebsiteGrid = ({
+  websites,
+  isExpanded,
+  forceExpand,
+  isMobile,
+  mobileExpandedId,
+  setMobileExpandedId,
+  onWebsiteClick
+}: ExpandableWebsiteGridProps) => {
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
+
+  // No longer need measurement for strict 10-item display via CSS hiding
+  const renderItem = (website: Website, index: number) => {
+    const isItemExpanded = isMobile && mobileExpandedId === website.id;
+    // Strictly hide items beyond index 9 when collapsed
+    if (!isExpanded && index >= 10) return null;
+
+    return (
+      <React.Fragment key={website.id}>
+        <CompactWebsiteCard
+          website={website}
+          onWebsiteClick={onWebsiteClick}
+          isExpanded={isItemExpanded}
+          onExpand={() => setMobileExpandedId(prev => prev === website.id ? null : website.id)}
+          data-index={index}
+          className={isExpanded && index >= 10 ? "animate-in fade-in zoom-in-95 duration-300" : ""}
+        />
+        {isItemExpanded && (
+          <div className="col-span-full w-full bg-muted/30 border border-border/50 rounded-xl p-4 animate-in slide-in-from-top-2 fade-in duration-200 space-y-3">
+            <p className="text-sm text-muted-foreground leading-relaxed break-words">
+              {website.description || '暂无描述'}
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/50">
+              <span className="text-xs text-muted-foreground/50">
+                {website.click_count || 0} 次访问
+              </span>
+              <Button 
+                size="sm" 
+                onClick={() => onWebsiteClick(website)}
+                className="h-8 text-xs px-4"
+              >
+                访问网站
+              </Button>
+            </div>
+          </div>
+        )}
+      </React.Fragment>
+    );
+  };
+
+  if (forceExpand || websites.length <= 10) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        {websites.map((w, i) => renderItem(w, i))}
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      ref={gridRef}
+      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 relative"
+    >
+      {websites.map((w, i) => renderItem(w, i))}
+    </div>
+  );
+};
+
 export const CategoryWebsites = ({ 
   categories, 
   websites, 
@@ -30,6 +111,7 @@ export const CategoryWebsites = ({
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [mobileExpandedId, setMobileExpandedId] = useState<string | null>(null);
 
   // Load expanded states from localStorage
   useEffect(() => {
@@ -102,65 +184,15 @@ export const CategoryWebsites = ({
   }, [displayWebsites, loading, selectedCategory, visibleCategories, websitesByCategory]);
 
   const renderWebsiteGrid = (websites: Website[], isExpanded: boolean, forceExpand: boolean = false) => {
-    const renderItem = (website: Website) => {
-      const isItemExpanded = isMobile && mobileExpandedId === website.id;
-      return (
-        <React.Fragment key={website.id}>
-          <CompactWebsiteCard
-            website={website}
-            onWebsiteClick={onWebsiteClick}
-            isExpanded={isItemExpanded}
-            onExpand={() => setMobileExpandedId(prev => prev === website.id ? null : website.id)}
-          />
-          {isItemExpanded && (
-            <div className="col-span-full w-full bg-muted/30 border border-border/50 rounded-xl p-4 animate-in slide-in-from-top-2 fade-in duration-200 space-y-3">
-              <p className="text-sm text-muted-foreground leading-relaxed break-words">
-                {website.description || '暂无描述'}
-              </p>
-              <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/50">
-                <span className="text-xs text-muted-foreground/50">
-                  {website.click_count || 0} 次访问
-                </span>
-                <Button 
-                  size="sm" 
-                  onClick={() => onWebsiteClick(website)}
-                  className="h-8 text-xs px-4"
-                >
-                  访问网站
-                </Button>
-              </div>
-            </div>
-          )}
-        </React.Fragment>
-      );
-    };
-
-    if (forceExpand || websites.length <= 10) {
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {websites.map(renderItem)}
-        </div>
-      );
-    }
-
-    const firstBatch = websites.slice(0, 10);
-    const secondBatch = websites.slice(10);
-
-    return (
-      <>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {firstBatch.map(renderItem)}
-        </div>
-        
-        <div 
-          className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 transition-all duration-300 ease-in-out overflow-hidden ${
-            isExpanded ? 'max-h-[5000px] opacity-100 mt-3' : 'max-h-0 opacity-0 mt-0'
-          }`}
-        >
-          {secondBatch.map(renderItem)}
-        </div>
-      </>
-    );
+    return <ExpandableWebsiteGrid 
+      websites={websites} 
+      isExpanded={isExpanded} 
+      forceExpand={forceExpand}
+      isMobile={isMobile}
+      mobileExpandedId={mobileExpandedId}
+      setMobileExpandedId={setMobileExpandedId}
+      onWebsiteClick={onWebsiteClick}
+    />;
   };
 
   return (

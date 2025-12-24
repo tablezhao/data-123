@@ -7,6 +7,7 @@ interface CompactWebsiteCardProps {
   onWebsiteClick: (website: Website) => void;
   isExpanded?: boolean;
   onExpand?: (e: React.MouseEvent) => void;
+  "data-index"?: number;
 }
 
 export const CompactWebsiteCard = ({ 
@@ -14,11 +15,13 @@ export const CompactWebsiteCard = ({
   onWebsiteClick,
   isExpanded = false,
   onExpand,
+  "data-index": dataIndex,
 }: CompactWebsiteCardProps) => {
   return (
     <div 
       className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-sm transition-all duration-200 cursor-pointer group relative"
       onClick={() => onWebsiteClick(website)}
+      data-index={dataIndex}
     >
       {/* Icon Area - Visual Accent */}
       <div className="w-10 h-10 shrink-0 rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border/50 group-hover:border-primary/20 transition-colors">
