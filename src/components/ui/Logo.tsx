@@ -54,7 +54,7 @@ export const Logo: React.FC<LogoProps> = ({
       `}
       draggable={false}
       loading="eager"
-      fetchPriority="high"
+      {...({ fetchpriority: "high" } as any)}
     />
   );
 };
