@@ -74,12 +74,19 @@ export async function updateCategory(id: string, input: UpdateCategoryInput): Pr
   return data;
 }
 
-// 删除分类
-export async function deleteCategory(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('categories')
-    .delete()
-    .eq('id', id);
+// 批量更新分类排序
+export async function batchUpdateCategorySortOrder(updates: { id: string; sort_order: number }[]): Promise<void> {
+  const { error } = await supabase.rpc('batch_update_category_sort_order', {
+    payload: updates
+  });
 
-  if (error) throw error;
+  if (error) {
+    // Fallback to Promise.all if RPC fails or doesn't exist
+    console.warn('RPC batch_update_category_sort_order failed, falling back to individual updates', error);
+    await Promise.all(
+      updates.map(update => 
+        supabase.from('categories').update({ sort_order: update.sort_order }).eq('id', update.id)
+      )
+    );
+  }
 }

@@ -42,6 +42,7 @@ import {
   batchDeleteWebsites,
   batchUpdateWebsiteSortOrder,
 } from '@/db/api';
+import { batchUpdateCategorySortOrder } from '@/services/categoryService';
 import { uploadImage } from '@/lib/upload';
 import type { Category, Website, CreateWebsiteInput, UpdateWebsiteInput } from '@/types';
 import {
@@ -320,15 +321,72 @@ export default function WebsiteManagement() {
     }
   }
   
+  const [groupedWebsites, setGroupedWebsites] = useState<{ category: Category; websites: Website[] }[]>([]);
+  const [draggedSortItem, setDraggedSortItem] = useState<{ type: 'category' | 'website'; index: number; subIndex?: number } | null>(null);
+
+  useEffect(() => {
+    if (isSortMode) {
+      initSortData();
+    }
+  }, [isSortMode]);
+
+  function initSortData() {
+    // Group websites by category
+    const groups: { category: Category; websites: Website[] }[] = [];
+    const categoryMap = new Map<string, Website[]>();
+
+    websites.forEach(w => {
+      const catId = w.category_id;
+      if (!categoryMap.has(catId)) {
+        categoryMap.set(catId, []);
+      }
+      categoryMap.get(catId)?.push(w);
+    });
+
+    // Flatten categories to list (using existing flattenCategories helper if needed, or just map)
+    // We want to sort categories by their sort_order first
+    const sortedCategories = [...flattenCategories(categories)].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+    sortedCategories.forEach(cat => {
+      const catWebsites = categoryMap.get(cat.id) || [];
+      // Sort websites by their sort_order
+      catWebsites.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      groups.push({ category: cat, websites: catWebsites });
+    });
+
+    // Handle uncategorized if any (though unlikely with required field)
+    setGroupedWebsites(groups);
+  }
+
   // Sort Logic
   async function handleSaveSort() {
     try {
       setLoading(true);
-      const updates = websites.map((w, index) => ({
-        id: w.id,
-        sort_order: (index + 1) * 10 
-      }));
-      await batchUpdateWebsiteSortOrder(updates);
+      
+      const websiteUpdates: { id: string; sort_order: number }[] = [];
+      const categoryUpdates: { id: string; sort_order: number }[] = [];
+
+      groupedWebsites.forEach((group, groupIndex) => {
+        // Update Category Order
+        categoryUpdates.push({
+          id: group.category.id,
+          sort_order: (groupIndex + 1) * 10
+        });
+
+        // Update Website Order
+        group.websites.forEach((w, wIndex) => {
+          websiteUpdates.push({
+            id: w.id,
+            sort_order: (wIndex + 1) * 10
+          });
+        });
+      });
+
+      await Promise.all([
+        batchUpdateWebsiteSortOrder(websiteUpdates),
+        batchUpdateCategorySortOrder(categoryUpdates)
+      ]);
+
       toast.success('排序已保存');
       setIsSortMode(false);
       loadData();
@@ -338,31 +396,78 @@ export default function WebsiteManagement() {
       setLoading(false);
     }
   }
-  
-  function handleDragStart(e: React.DragEvent, website: Website) {
-      if (!isSortMode) return;
-      setDraggedItem(website);
-      e.dataTransfer.effectAllowed = 'move';
+
+  // Category Drag Handlers
+  function handleCategoryDragStart(e: React.DragEvent, index: number) {
+    setDraggedSortItem({ type: 'category', index });
+    e.dataTransfer.effectAllowed = 'move';
   }
-  
-  function handleDragOver(e: React.DragEvent, targetWebsite: Website) {
-      e.preventDefault();
-      if (!isSortMode || !draggedItem || draggedItem.id === targetWebsite.id) return;
-      
-      const newWebsites = [...websites];
-      const draggedIndex = newWebsites.findIndex(w => w.id === draggedItem.id);
-      const targetIndex = newWebsites.findIndex(w => w.id === targetWebsite.id);
-      
-      if (draggedIndex === -1 || targetIndex === -1) return;
-      
-      newWebsites.splice(draggedIndex, 1);
-      newWebsites.splice(targetIndex, 0, draggedItem);
-      
-      setWebsites(newWebsites);
+
+  function handleCategoryDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault();
+    if (!draggedSortItem || draggedSortItem.type !== 'category' || draggedSortItem.index === index) return;
+
+    const newGroups = [...groupedWebsites];
+    const item = newGroups.splice(draggedSortItem.index, 1)[0];
+    newGroups.splice(index, 0, item);
+    
+    setGroupedWebsites(newGroups);
+    setDraggedSortItem({ ...draggedSortItem, index });
+  }
+
+  // Website Drag Handlers
+  function handleWebsiteDragStart(e: React.DragEvent, groupIndex: number, websiteIndex: number) {
+    e.stopPropagation();
+    setDraggedSortItem({ type: 'website', index: groupIndex, subIndex: websiteIndex });
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleWebsiteDragOver(e: React.DragEvent, groupIndex: number, websiteIndex: number) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!draggedSortItem || draggedSortItem.type !== 'website') return;
+    
+    // Allow moving between categories? Requirement says "within category", but usually drag and drop implies flexibility.
+    // Let's allow moving between categories for better UX, or restrict it. 
+    // "In the category group... drag and drop to adjust website order". 
+    // I'll support cross-category drag for better UX as it implicitly supports re-categorization if saved.
+    
+    if (draggedSortItem.index === groupIndex && draggedSortItem.subIndex === websiteIndex) return;
+
+    const newGroups = [...groupedWebsites];
+    const sourceGroup = newGroups[draggedSortItem.index];
+    const targetGroup = newGroups[groupIndex];
+    
+    const item = sourceGroup.websites.splice(draggedSortItem.subIndex!, 1)[0];
+    // Update category_id if moved to different group
+    if (draggedSortItem.index !== groupIndex) {
+        item.category_id = targetGroup.category.id; 
+        // Note: This won't persist category change until save, but our save logic only updates sort_order.
+        // We might need to update category_id in DB too if we allow cross-category.
+        // For now, let's RESTRICT to same category to simplify and meet strict "sort" requirement.
+    }
+    
+    // Restricting to same category for now to ensure data integrity with just updateWebsiteSortOrder
+    if (draggedSortItem.index !== groupIndex) return; 
+
+    targetGroup.websites.splice(websiteIndex, 0, item);
+    
+    setGroupedWebsites(newGroups);
+    setDraggedSortItem({ type: 'website', index: groupIndex, subIndex: websiteIndex });
   }
 
   function handleDragEnd() {
-    setDraggedItem(null);
+    setDraggedSortItem(null);
+  }
+
+  function sortGroupWebsites(groupIndex: number, direction: 'asc' | 'desc') {
+    const newGroups = [...groupedWebsites];
+    newGroups[groupIndex].websites.sort((a, b) => {
+      return direction === 'asc' 
+        ? a.title.localeCompare(b.title, 'zh-CN') 
+        : b.title.localeCompare(a.title, 'zh-CN');
+    });
+    setGroupedWebsites(newGroups);
   }
 
   // 展平分类树
@@ -608,6 +713,79 @@ export default function WebsiteManagement() {
       <CardContent>
         {loading ? (
           <div className="text-center py-8">加载中...</div>
+        ) : isSortMode ? (
+            <div className="space-y-4">
+                <div className="text-sm text-muted-foreground mb-4">
+                    提示：拖拽分类标题可调整分类顺序，拖拽网站卡片可调整组内顺序。
+                </div>
+                {groupedWebsites.map((group, groupIndex) => (
+                    <div 
+                        key={group.category.id} 
+                        className="border rounded-lg bg-card"
+                        draggable
+                        onDragStart={(e) => handleCategoryDragStart(e, groupIndex)}
+                        onDragOver={(e) => handleCategoryDragOver(e, groupIndex)}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <div className="p-3 bg-muted/50 border-b flex items-center justify-between cursor-move group">
+                            <div className="flex items-center gap-2 font-medium">
+                                <GripVertical className="w-4 h-4 text-muted-foreground/50 group-hover:text-muted-foreground" />
+                                {group.category.icon} {group.category.name}
+                                <Badge variant="secondary" className="text-xs ml-2">
+                                    {group.websites.length}
+                                </Badge>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-7 text-xs"
+                                    onClick={() => sortGroupWebsites(groupIndex, 'asc')}
+                                    title="按名称A-Z排序"
+                                >
+                                    A-Z
+                                </Button>
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-7 text-xs"
+                                    onClick={() => sortGroupWebsites(groupIndex, 'desc')}
+                                    title="按名称Z-A排序"
+                                >
+                                    Z-A
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {group.websites.map((website, wIndex) => (
+                                <div
+                                    key={website.id}
+                                    draggable
+                                    onDragStart={(e) => handleWebsiteDragStart(e, groupIndex, wIndex)}
+                                    onDragOver={(e) => handleWebsiteDragOver(e, groupIndex, wIndex)}
+                                    onDragEnd={handleDragEnd}
+                                    className="flex items-center gap-3 p-2 border rounded bg-background hover:bg-accent cursor-move transition-colors"
+                                >
+                                    <GripVertical className="w-4 h-4 text-muted-foreground/50 shrink-0" />
+                                    {website.favicon_url && (
+                                        <img 
+                                            src={website.favicon_url} 
+                                            className="w-4 h-4 object-contain shrink-0" 
+                                            onError={(e) => e.currentTarget.style.display = 'none'}
+                                        />
+                                    )}
+                                    <span className="truncate text-sm flex-1">{website.title}</span>
+                                </div>
+                            ))}
+                            {group.websites.length === 0 && (
+                                <div className="col-span-full py-4 text-center text-xs text-muted-foreground border border-dashed rounded">
+                                    此分类下暂无网站
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
         ) : websites.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             暂无网站，点击上方按钮添加
@@ -617,42 +795,29 @@ export default function WebsiteManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">
-                    {isSortMode ? (
-                        <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
-                    ) : (
-                        <Checkbox
-                            checked={selectedWebsites.size === websites.length}
-                            onCheckedChange={toggleSelectAll}
-                        />
-                    )}
+                    <Checkbox
+                        checked={selectedWebsites.size === websites.length}
+                        onCheckedChange={toggleSelectAll}
+                    />
                 </TableHead>
                 <TableHead>网站</TableHead>
                 <TableHead>分类</TableHead>
                 <TableHead>URL</TableHead>
-                <TableHead>{isSortMode ? '排序值' : '访问量'}</TableHead>
+                <TableHead>访问量</TableHead>
                 <TableHead>状态</TableHead>
-                {!isSortMode && <TableHead className="text-right">操作</TableHead>}
+                <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {websites.map((website) => (
                 <TableRow 
                     key={website.id}
-                    draggable={isSortMode}
-                    onDragStart={(e) => handleDragStart(e, website)}
-                    onDragOver={(e) => handleDragOver(e, website)}
-                    onDragEnd={handleDragEnd}
-                    className={isSortMode ? 'cursor-move hover:bg-muted/50 transition-colors' : ''}
                 >
                   <TableCell>
-                    {isSortMode ? (
-                        <GripVertical className="w-4 h-4 text-muted-foreground cursor-move" />
-                    ) : (
-                        <Checkbox
-                            checked={selectedWebsites.has(website.id)}
-                            onCheckedChange={() => toggleSelectWebsite(website.id)}
-                        />
-                    )}
+                    <Checkbox
+                        checked={selectedWebsites.has(website.id)}
+                        onCheckedChange={() => toggleSelectWebsite(website.id)}
+                    />
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -683,11 +848,7 @@ export default function WebsiteManagement() {
                     </a>
                   </TableCell>
                   <TableCell>
-                      {isSortMode ? (
-                          <span className="font-mono">{website.sort_order}</span>
-                      ) : (
-                          website.click_count
-                      )}
+                      {website.click_count}
                   </TableCell>
                   <TableCell>
                     {website.is_visible ? (
@@ -696,8 +857,7 @@ export default function WebsiteManagement() {
                       <Badge variant="secondary">隐藏</Badge>
                     )}
                   </TableCell>
-                  {!isSortMode && (
-                    <TableCell className="text-right">
+                  <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                         <Button
                             variant="ghost"
@@ -729,7 +889,6 @@ export default function WebsiteManagement() {
                         </Button>
                         </div>
                     </TableCell>
-                  )}
                 </TableRow>
               ))}
             </TableBody>
