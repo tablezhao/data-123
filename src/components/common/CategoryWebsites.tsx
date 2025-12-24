@@ -1,9 +1,9 @@
-import { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CompactWebsiteCard } from './CompactWebsiteCard';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LayoutGrid, ChevronDown } from 'lucide-react';
 import type { Category, Website } from '@/types';
 
 interface CategoryWebsitesProps {
@@ -29,6 +29,27 @@ export const CategoryWebsites = ({
 }: CategoryWebsitesProps) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  // Load expanded states from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('website_expanded_states');
+      if (saved) {
+        setExpandedCategories(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Failed to load expanded states', e);
+    }
+  }, []);
+
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const next = { ...prev, [categoryId]: !prev[categoryId] };
+      localStorage.setItem('website_expanded_states', JSON.stringify(next));
+      return next;
+    });
+  };
 
   // Responsive: Check mobile state
   useEffect(() => {
@@ -79,6 +100,68 @@ export const CategoryWebsites = ({
     }
     return (displayWebsites || []).length > 0;
   }, [displayWebsites, loading, selectedCategory, visibleCategories, websitesByCategory]);
+
+  const renderWebsiteGrid = (websites: Website[], isExpanded: boolean, forceExpand: boolean = false) => {
+    const renderItem = (website: Website) => {
+      const isItemExpanded = isMobile && mobileExpandedId === website.id;
+      return (
+        <React.Fragment key={website.id}>
+          <CompactWebsiteCard
+            website={website}
+            onWebsiteClick={onWebsiteClick}
+            isExpanded={isItemExpanded}
+            onExpand={() => setMobileExpandedId(prev => prev === website.id ? null : website.id)}
+          />
+          {isItemExpanded && (
+            <div className="col-span-full w-full bg-muted/30 border border-border/50 rounded-xl p-4 animate-in slide-in-from-top-2 fade-in duration-200 space-y-3">
+              <p className="text-sm text-muted-foreground leading-relaxed break-words">
+                {website.description || '暂无描述'}
+              </p>
+              <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/50">
+                <span className="text-xs text-muted-foreground/50">
+                  {website.click_count || 0} 次访问
+                </span>
+                <Button 
+                  size="sm" 
+                  onClick={() => onWebsiteClick(website)}
+                  className="h-8 text-xs px-4"
+                >
+                  访问网站
+                </Button>
+              </div>
+            </div>
+          )}
+        </React.Fragment>
+      );
+    };
+
+    if (forceExpand || websites.length <= 10) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {websites.map(renderItem)}
+        </div>
+      );
+    }
+
+    const firstBatch = websites.slice(0, 10);
+    const secondBatch = websites.slice(10);
+
+    return (
+      <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {firstBatch.map(renderItem)}
+        </div>
+        
+        <div 
+          className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 transition-all duration-300 ease-in-out overflow-hidden ${
+            isExpanded ? 'max-h-[5000px] opacity-100 mt-3' : 'max-h-0 opacity-0 mt-0'
+          }`}
+        >
+          {secondBatch.map(renderItem)}
+        </div>
+      </>
+    );
+  };
 
   return (
     <section className="flex flex-col md:flex-row gap-0 md:gap-6 relative min-h-[600px]">
@@ -192,42 +275,45 @@ export const CategoryWebsites = ({
                     {visibleCategories.map((category) => {
                         const categoryWebsites = websitesByCategory[category.id] || [];
                         if (categoryWebsites.length === 0) return null;
+                        const hasMore = categoryWebsites.length > 10;
+                        const isExpanded = expandedCategories[category.id] || false;
 
                         return (
                         <div 
                             key={category.id}
                             className="scroll-mt-24 md:scroll-mt-20"
                         >
-                            <div className="flex items-center gap-3 mb-4">
-                                {category.icon && <span className="text-xl">{category.icon}</span>}
-                                <h3 className="text-lg font-bold text-foreground">{category.name}</h3>
-                                <span className="px-2 py-0.5 rounded-full bg-muted text-xs font-medium text-muted-foreground">
-                                    {categoryWebsites.length}
-                                </span>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    {category.icon && <span className="text-xl">{category.icon}</span>}
+                                    <h3 className="text-lg font-bold text-foreground">{category.name}</h3>
+                                    <span className="px-2 py-0.5 rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                                        {categoryWebsites.length}
+                                    </span>
+                                </div>
+                                {hasMore && (
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => toggleCategory(category.id)}
+                                        className="h-7 px-3 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-full transition-all group"
+                                    >
+                                        <span className="font-medium">
+                                            {isExpanded ? '收起' : `更多 (${categoryWebsites.length - 10})`}
+                                        </span>
+                                        <ChevronDown className={`ml-1.5 w-3.5 h-3.5 transition-transform duration-300 group-hover:text-primary ${isExpanded ? 'rotate-180' : ''}`} />
+                                    </Button>
+                                )}
                             </div>
                             
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                            {categoryWebsites.map((website) => (
-                                <CompactWebsiteCard
-                                key={website.id}
-                                website={website}
-                                onWebsiteClick={onWebsiteClick}
-                                />
-                            ))}
-                            </div>
+                            {renderWebsiteGrid(categoryWebsites, isExpanded)}
                         </div>
                         );
                     })}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                    {(displayWebsites || []).map((website) => (
-                        <CompactWebsiteCard
-                        key={website.id}
-                        website={website}
-                        onWebsiteClick={onWebsiteClick}
-                        />
-                    ))}
+                    <div>
+                        {renderWebsiteGrid(displayWebsites || [], true, true)}
                     </div>
                 )}
 

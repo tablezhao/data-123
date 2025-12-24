@@ -1,19 +1,23 @@
 import React from 'react';
-import { Star } from 'lucide-react';
+import { Star, ChevronDown } from 'lucide-react';
 import type { Website } from '@/types';
 
 interface CompactWebsiteCardProps {
   website: Website;
   onWebsiteClick: (website: Website) => void;
+  isExpanded?: boolean;
+  onExpand?: (e: React.MouseEvent) => void;
 }
 
 export const CompactWebsiteCard = ({ 
   website, 
-  onWebsiteClick, 
+  onWebsiteClick,
+  isExpanded = false,
+  onExpand,
 }: CompactWebsiteCardProps) => {
   return (
     <div 
-      className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-sm transition-all duration-200 cursor-pointer group"
+      className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-sm transition-all duration-200 cursor-pointer group relative"
       onClick={() => onWebsiteClick(website)}
     >
       {/* Icon Area - Visual Accent */}
@@ -40,6 +44,24 @@ export const CompactWebsiteCard = ({
         <p className="text-xs text-muted-foreground truncate leading-tight opacity-80">
             {website.description || '暂无描述'}
         </p>
+      </div>
+
+      {/* Mobile Expand Button */}
+      <div className="md:hidden flex items-center">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onExpand?.(e);
+          }}
+          className="p-3 -mr-3 min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full hover:bg-muted/50 active:bg-muted transition-colors"
+          aria-label={isExpanded ? "收起详情" : "展开详情"}
+        >
+          <ChevronDown 
+            className={`w-4 h-4 text-muted-foreground/70 transition-transform duration-300 ${
+              isExpanded ? 'rotate-180' : ''
+            }`} 
+          />
+        </button>
       </div>
     </div>
   );
