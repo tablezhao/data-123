@@ -142,9 +142,11 @@ export default function FavoritesPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <CardDescription className="line-clamp-2 mb-3">
-                      {website.description || '暂无描述'}
-                    </CardDescription>
+                    {website.description && (
+                      <CardDescription className="line-clamp-2 mb-3">
+                        {website.description}
+                      </CardDescription>
+                    )}
                     <div className="flex items-center justify-between">
                       <Badge variant="secondary">{website.category?.name}</Badge>
                       <span className="text-xs text-muted-foreground">

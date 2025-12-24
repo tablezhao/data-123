@@ -66,9 +66,11 @@ export const WebsiteCard = ({
         </div>
       </CardHeader>
       <CardContent>
-        <CardDescription className="line-clamp-2">
-          {website.description || '暂无描述'}
-        </CardDescription>
+        {website.description && (
+          <CardDescription className="line-clamp-2">
+            {website.description}
+          </CardDescription>
+        )}
         {(showCategory || showClickCount) && (
           <div className="flex items-center justify-between mt-3">
             {showCategory && website.category && (

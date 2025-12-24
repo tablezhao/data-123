@@ -59,9 +59,11 @@ const ExpandableWebsiteGrid = ({
         />
         {isItemExpanded && (
           <div className="col-span-full w-full bg-muted/30 border border-border/50 rounded-xl p-4 animate-in slide-in-from-top-2 fade-in duration-200 space-y-3">
-            <p className="text-sm text-muted-foreground leading-relaxed break-words">
-              {website.description || '暂无描述'}
-            </p>
+            {website.description && (
+              <p className="text-sm text-muted-foreground leading-relaxed break-words">
+                {website.description}
+              </p>
+            )}
             <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/50">
               <span className="text-xs text-muted-foreground/50">
                 {website.click_count || 0} 次访问

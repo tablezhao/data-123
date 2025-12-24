@@ -44,9 +44,11 @@ export const CompactWebsiteCard = ({
         <h3 className="text-sm font-semibold text-card-foreground truncate group-hover:text-primary transition-colors leading-tight">
             {website.title}
         </h3>
-        <p className="text-xs text-muted-foreground truncate leading-tight opacity-80">
-            {website.description || '暂无描述'}
-        </p>
+        {website.description && (
+            <p className="text-xs text-muted-foreground truncate leading-tight opacity-80">
+                {website.description}
+            </p>
+        )}
       </div>
 
       {/* Mobile Expand Button */}
