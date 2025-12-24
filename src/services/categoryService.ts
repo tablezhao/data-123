@@ -90,3 +90,13 @@ export async function batchUpdateCategorySortOrder(updates: { id: string; sort_o
     );
   }
 }
+
+// 删除分类
+export async function deleteCategory(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
