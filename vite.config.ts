@@ -5,12 +5,12 @@ import svgr from "vite-plugin-svgr";
 import path from "path";
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     miaodaDevPlugin({
       appId: process.env.VITE_APP_ID || 'app-85w8y6vjhh4x',
-    }),
+    } as any) as any,
     svgr({
       svgrOptions: {
         icon: true,
@@ -18,6 +18,29 @@ export default defineConfig({
         namedExport: "ReactComponent",
       },
     }),
+    // 生产环境注入 Umami 分析脚本
+    {
+      name: 'inject-umami',
+      transformIndexHtml(html) {
+        if (mode === 'production') {
+          return {
+            html,
+            tags: [
+              {
+                tag: 'script',
+                attrs: {
+                  defer: true,
+                  src: 'https://cloud.umami.is/script.js',
+                  'data-website-id': '150b60a1-4979-43bf-a5eb-97ffa249d2bd'
+                },
+                injectTo: 'head'
+              }
+            ]
+          };
+        }
+        return html;
+      }
+    },
     // 自定义插件，去除 Vite 内置的加载动画
     {
       name: 'remove-vite-loading',
@@ -93,4 +116,4 @@ export default defineConfig({
       'Cache-Control': 'no-cache',
     },
   },
-});
+}));
