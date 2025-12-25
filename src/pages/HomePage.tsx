@@ -21,6 +21,7 @@ import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
 import { SearchBar } from '@/components/common/SearchBar';
 import { CategoryWebsites } from '@/components/common/CategoryWebsites';
+import { FavoritesSection } from '@/components/common/FavoritesSection';
 import PageMeta from '@/components/common/PageMeta';
 
 export default function HomePage() {
@@ -162,6 +163,18 @@ export default function HomePage() {
         <div className="mb-8">
           <SearchBar query={searchQuery} onSearch={handleSearch} />
         </div>
+
+        {/* 我的收藏 - 仅在登录且有收藏时显示 */}
+        {user && favoriteIds.size > 0 && (
+          <div className="mb-8">
+            <FavoritesSection
+              websites={websites}
+              favoriteIds={favoriteIds}
+              onWebsiteClick={handleWebsiteClick}
+              onToggleFavorite={toggleFavorite}
+            />
+          </div>
+        )}
 
         {/* 分类导航 */}
         <CategoryWebsites

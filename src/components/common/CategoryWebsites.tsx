@@ -17,7 +17,7 @@ interface CategoryWebsitesProps {
   onToggleFavorite: (websiteId: string, e: React.MouseEvent) => void;
 }
 
-import { useRef, useLayoutEffect } from 'react';
+import { useRef } from 'react';
 
 interface ExpandableWebsiteGridProps {
   websites: Website[];
@@ -27,6 +27,8 @@ interface ExpandableWebsiteGridProps {
   mobileExpandedId: string | null;
   setMobileExpandedId: React.Dispatch<React.SetStateAction<string | null>>;
   onWebsiteClick: (website: Website) => void;
+  favoriteIds?: Set<string>;
+  onToggleFavorite?: (websiteId: string, e: React.MouseEvent) => void;
 }
 
 const ExpandableWebsiteGrid = ({
@@ -36,10 +38,11 @@ const ExpandableWebsiteGrid = ({
   isMobile,
   mobileExpandedId,
   setMobileExpandedId,
-  onWebsiteClick
+  onWebsiteClick,
+  favoriteIds = new Set(),
+  onToggleFavorite,
 }: ExpandableWebsiteGridProps) => {
   const gridRef = useRef<HTMLDivElement>(null);
-  const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
 
   // No longer need measurement for strict 10-item display via CSS hiding
   const renderItem = (website: Website, index: number) => {
@@ -56,6 +59,8 @@ const ExpandableWebsiteGrid = ({
           onExpand={() => setMobileExpandedId(prev => prev === website.id ? null : website.id)}
           data-index={index}
           className={isExpanded && index >= 10 ? "animate-in fade-in zoom-in-95 duration-300" : ""}
+          favoriteIds={favoriteIds}
+          onToggleFavorite={onToggleFavorite}
         />
         {isItemExpanded && (
           <div className="col-span-full w-full bg-muted/30 border border-border/50 rounded-xl p-4 animate-in slide-in-from-top-2 fade-in duration-200 space-y-3">
@@ -194,6 +199,8 @@ export const CategoryWebsites = ({
       mobileExpandedId={mobileExpandedId}
       setMobileExpandedId={setMobileExpandedId}
       onWebsiteClick={onWebsiteClick}
+      favoriteIds={favoriteIds}
+      onToggleFavorite={onToggleFavorite}
     />;
   };
 

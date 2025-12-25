@@ -8,6 +8,9 @@ interface CompactWebsiteCardProps {
   isExpanded?: boolean;
   onExpand?: (e: React.MouseEvent) => void;
   "data-index"?: number;
+  className?: string;
+  favoriteIds?: Set<string>;
+  onToggleFavorite?: (websiteId: string, e: React.MouseEvent) => void;
 }
 
 export const CompactWebsiteCard = ({ 
@@ -16,10 +19,20 @@ export const CompactWebsiteCard = ({
   isExpanded = false,
   onExpand,
   "data-index": dataIndex,
+  className = "",
+  favoriteIds = new Set(),
+  onToggleFavorite,
 }: CompactWebsiteCardProps) => {
+  const isFavorited = favoriteIds.has(website.id);
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleFavorite?.(website.id, e);
+  };
+
   return (
     <div 
-      className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-sm transition-all duration-200 cursor-pointer group relative"
+      className={`flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-sm transition-all duration-200 cursor-pointer group relative ${className}`}
       onClick={() => onWebsiteClick(website)}
       data-index={dataIndex}
     >
@@ -50,6 +63,25 @@ export const CompactWebsiteCard = ({
             </p>
         )}
       </div>
+
+      {/* Favorite Button - Top Right Corner */}
+      {onToggleFavorite && (
+        <button
+          onClick={handleFavoriteClick}
+          className={`hidden md:flex shrink-0 w-8 h-8 items-center justify-center rounded-full transition-all duration-300 ${
+            isFavorited 
+              ? 'bg-primary/10 text-primary hover:bg-primary/20' 
+              : 'bg-transparent text-muted-foreground/40 hover:text-primary/60 hover:bg-muted/50'
+          }`}
+          aria-label={isFavorited ? "取消收藏" : "添加收藏"}
+        >
+          <Star 
+            className={`w-4 h-4 transition-all duration-300 ${
+              isFavorited ? 'fill-current scale-110' : 'scale-100'
+            }`} 
+          />
+        </button>
+      )}
 
       {/* Mobile Expand Button */}
       <div className="md:hidden flex items-center">

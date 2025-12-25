@@ -36,7 +36,7 @@ export const WebsiteCard = ({
                 src={website.favicon_url}
                 alt=""
                 className="w-5 h-5"
-                loading={priority ? "eager" : "lazy"}
+                loading="lazy"
                 width="20"
                 height="20"
                 onError={(e) => {
