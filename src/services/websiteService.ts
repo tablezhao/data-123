@@ -5,7 +5,8 @@ import type { Website, CreateWebsiteInput, UpdateWebsiteInput } from '@/types';
 export async function getWebsites(categoryId?: string): Promise<Website[]> {
   let query = supabase
     .from('websites')
-    .select('*, category:categories(*)');
+    .select('*, category:categories(*)')
+    .eq('is_visible', true);
 
   if (categoryId) {
     query = query.eq('category_id', categoryId);
@@ -13,6 +14,18 @@ export async function getWebsites(categoryId?: string): Promise<Website[]> {
 
   const { data, error } = await query.order('sort_order', { ascending: true });
 
+  if (error) throw error;
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getFeaturedWebsites(limit = 10): Promise<Website[]> {
+  const { data, error } = await supabase
+    .from('websites')
+    .select('*, category:categories(*)')
+    .eq('is_featured', true)
+    .eq('is_visible', true)
+    .order('click_count', { ascending: false })
+    .limit(limit);
   if (error) throw error;
   return Array.isArray(data) ? data : [];
 }

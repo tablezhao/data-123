@@ -20,7 +20,7 @@ export const FavoritesSection = ({
   className = '',
 }: FavoritesSectionProps) => {
   const favoriteWebsites = useMemo(() => {
-    return websites.filter((website) => favoriteIds.has(website.id));
+    return websites.filter((website) => website.is_visible && favoriteIds.has(website.id));
   }, [websites, favoriteIds]);
 
   if (favoriteWebsites.length === 0) {

@@ -171,6 +171,7 @@ export const CategoryWebsites = ({
     }
     for (const website of websites) {
       if (!visibleCategoryById[website.category_id]) continue;
+      if (!website.is_visible) continue;
       (acc[website.category_id] ??= []).push(website);
     }
     return acc;

@@ -21,8 +21,8 @@ function AnalyticsLoader() {
       const handle = (window as any).requestIdleCallback(loadAnalytics);
       cleanup = () => (window as any).cancelIdleCallback(handle);
     } else {
-      const id = window.setTimeout(loadAnalytics, 3000);
-      cleanup = () => window.clearTimeout(id);
+      const id = setTimeout(loadAnalytics, 3000);
+      cleanup = () => clearTimeout(id);
     }
 
     return cleanup;
