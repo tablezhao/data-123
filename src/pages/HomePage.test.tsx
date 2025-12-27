@@ -17,25 +17,66 @@ vi.mock('@/stores/authStore', () => ({
 }));
 
 vi.mock('@/stores/settingsStore', () => ({
-  useSettingsStore: () => ({
-    siteName: 'site',
-    siteDescription: 'desc',
-    showFeaturedSection: true,
-  }),
+  useSettingsStore: (selector?: (state: any) => any) => {
+    const state = {
+      siteName: 'site',
+      siteDescription: 'desc',
+      showFeaturedSection: true,
+      difyChatbotEnabled: true,
+    };
+    return typeof selector === 'function' ? selector(state) : state;
+  },
 }));
 
-const favoritesDeferred = deferred<Record<string, boolean>>();
+const favoritesDeferred = deferred<Set<string>>();
 
-vi.mock('@/db/api', () => ({
-  getCategories: vi.fn().mockResolvedValue([{ id: 'c1', name: 'cat', parent_id: null, sort_order: 0, icon: null, description: null, is_visible: true, created_at: '', updated_at: '', children: [] }]),
-  getWebsites: vi.fn().mockResolvedValue([{ id: 'w1', title: 't', description: 'd', url: 'https://example.com', category_id: 'c1', favicon_url: null, logo_url: null, is_featured: false, is_visible: true, click_count: 0, sort_order: 0, created_at: '', updated_at: '', category: null }]),
-  getFeaturedWebsites: vi.fn().mockResolvedValue([]),
+vi.mock('@/services/categoryService', () => ({
+  getCategories: vi.fn().mockResolvedValue([
+    {
+      id: 'c1',
+      name: 'cat',
+      parent_id: null,
+      sort_order: 0,
+      icon: null,
+      description: null,
+      is_visible: true,
+      created_at: '',
+      updated_at: '',
+      children: [],
+    },
+  ]),
+}));
+
+vi.mock('@/services/websiteService', () => ({
+  getWebsites: vi.fn().mockResolvedValue([
+    {
+      id: 'w1',
+      title: 't',
+      description: 'd',
+      url: 'https://example.com',
+      category_id: 'c1',
+      favicon_url: null,
+      logo_url: null,
+      is_featured: false,
+      is_visible: true,
+      click_count: 0,
+      sort_order: 0,
+      created_at: '',
+      updated_at: '',
+      category: null,
+    },
+  ]),
   searchWebsites: vi.fn(),
+  incrementWebsiteClick: vi.fn(),
+}));
+
+vi.mock('@/services/favoritesService', () => ({
   addFavorite: vi.fn(),
   removeFavorite: vi.fn(),
-  isFavorited: vi.fn(),
-  areFavorited: vi.fn().mockImplementation(() => favoritesDeferred.promise),
-  incrementWebsiteClick: vi.fn(),
+  getAllFavoriteIds: vi.fn().mockImplementation(() => favoritesDeferred.promise),
+}));
+
+vi.mock('@/services/statsService', () => ({
   recordVisit: vi.fn(),
 }));
 
@@ -84,7 +125,7 @@ describe('HomePage performance', () => {
 
     expect(screen.getByTestId('category')).toHaveAttribute('data-favorites', '0');
 
-    favoritesDeferred.resolve({ w1: true });
+    favoritesDeferred.resolve(new Set(['w1']));
 
     await waitFor(() => {
       expect(screen.getByTestId('category')).toHaveAttribute('data-favorites', '1');

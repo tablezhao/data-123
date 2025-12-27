@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bot, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 interface FloatingAIProps {
   /**
@@ -18,6 +19,7 @@ export const FloatingAI: React.FC<FloatingAIProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const difyChatbotEnabled = useSettingsStore((state) => state.difyChatbotEnabled);
 
   // 延迟显示 Tooltip
   useEffect(() => {
@@ -29,6 +31,10 @@ export const FloatingAI: React.FC<FloatingAIProps> = ({
     }
     return () => clearTimeout(timer);
   }, [isHovered, isOpen]);
+
+  if (!difyChatbotEnabled) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[1000] flex flex-col items-end gap-4 pointer-events-none print:hidden">

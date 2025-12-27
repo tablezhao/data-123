@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -21,6 +22,7 @@ export default function SettingsManagement() {
     footer_text: '',
     logo_url: '',
     favicon_url: '',
+    dify_chatbot_enabled: true,
   });
   
   // 用于预览的本地状态
@@ -47,6 +49,7 @@ export default function SettingsManagement() {
       
       const logoUrl = (data.logo_url as string) || '';
       const faviconUrl = (data.favicon_url as string) || '';
+      const difyChatbotEnabled = (data.dify_chatbot_enabled as boolean) ?? true;
       
       setSettings({
         site_name: (data.site_name as string) || '',
@@ -55,6 +58,7 @@ export default function SettingsManagement() {
         footer_text: (data.footer_text as string) || '',
         logo_url: logoUrl,
         favicon_url: faviconUrl,
+        dify_chatbot_enabled: difyChatbotEnabled,
       });
       
       // 设置预览
@@ -82,8 +86,9 @@ export default function SettingsManagement() {
       });
 
       if (result.success && result.url) {
-        setSettings(prev => ({ ...prev, logo_url: result.url }));
-        setLogoPreview(result.url);
+        const url = result.url;
+        setSettings(prev => ({ ...prev, logo_url: url }));
+        setLogoPreview(url);
         toast.success('Logo 上传成功');
       } else {
         toast.error(result.error || 'Logo 上传失败');
@@ -109,8 +114,9 @@ export default function SettingsManagement() {
       });
 
       if (result.success && result.url) {
-        setSettings(prev => ({ ...prev, favicon_url: result.url }));
-        setFaviconPreview(result.url);
+        const url = result.url;
+        setSettings(prev => ({ ...prev, favicon_url: url }));
+        setFaviconPreview(url);
         toast.success('Favicon 上传成功');
       } else {
         toast.error(result.error || 'Favicon 上传失败');
@@ -144,6 +150,7 @@ export default function SettingsManagement() {
         updateSiteSetting('footer_text', settings.footer_text),
         updateSiteSetting('logo_url', settings.logo_url),
         updateSiteSetting('favicon_url', settings.favicon_url),
+        updateSiteSetting('dify_chatbot_enabled', settings.dify_chatbot_enabled),
       ]);
       
       // 保存成功后刷新设置，确保所有组件能获取到最新数据
@@ -216,6 +223,17 @@ export default function SettingsManagement() {
             value={settings.footer_text}
             onChange={(e) => setSettings({ ...settings, footer_text: e.target.value })}
           />
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="dify_chatbot_enabled"
+            checked={settings.dify_chatbot_enabled}
+            onCheckedChange={(checked) =>
+              setSettings({ ...settings, dify_chatbot_enabled: checked })
+            }
+          />
+          <Label htmlFor="dify_chatbot_enabled">启用 Dify Chatbot</Label>
         </div>
 
         {/* Logo 上传 */}

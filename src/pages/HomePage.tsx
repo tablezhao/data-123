@@ -49,26 +49,11 @@ export default function HomePage() {
     setLoading(true);
 
     try {
-      const promises: Promise<any>[] = [
-        getCategories(),
-        getWebsites(),
-      ];
-
-      if (userId) {
-        promises.push(getAllFavoriteIds());
-      }
-
-      const results = await Promise.all(promises);
-      
-      const categoriesData = results[0];
-      const websitesData = results[1];
-      const favoriteIdsData = userId && results[2] ? results[2] : new Set<string>();
-
+      const [categoriesData, websitesData] = await Promise.all([getCategories(), getWebsites()]);
       if (!isActive()) return;
 
       setCategories(categoriesData);
       setWebsites(websitesData);
-      setFavoriteIds(favoriteIdsData);
       setLoading(false);
     } catch (error) {
       if (!isActive()) return;
@@ -76,6 +61,22 @@ export default function HomePage() {
       toast.error('加载数据失败');
       setFavoriteIds(new Set());
       setLoading(false);
+      return;
+    }
+
+    if (!userId) {
+      setFavoriteIds(new Set());
+      return;
+    }
+
+    try {
+      const favoriteIdsData = await getAllFavoriteIds();
+      if (!isActive()) return;
+      setFavoriteIds(favoriteIdsData);
+    } catch (error) {
+      if (!isActive()) return;
+      console.error('获取收藏失败:', error);
+      setFavoriteIds(new Set());
     }
   }
 

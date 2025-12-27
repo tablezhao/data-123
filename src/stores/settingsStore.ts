@@ -7,6 +7,7 @@ interface SettingsState {
   footerText: string;
   logoUrl: string | null;
   faviconUrl: string | null;
+  difyChatbotEnabled: boolean;
   loading: boolean;
   loadSettings: () => Promise<void>;
   refreshSettings: () => Promise<void>;
@@ -19,6 +20,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   footerText: '© 2025 数据合规123导航. All rights reserved.',
   logoUrl: null,
   faviconUrl: null,
+  difyChatbotEnabled: true,
   loading: true,
 
   loadSettings: async () => {
@@ -36,6 +38,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         footerText: (settings.footer_text as string) || '© 2025 数据合规123导航. All rights reserved.',
         logoUrl: (settings.logo_url as string) || null,
         faviconUrl: (settings.favicon_url as string) || null,
+        difyChatbotEnabled: (settings.dify_chatbot_enabled as boolean) ?? true,
         loading: false,
       });
     } catch (error) {
