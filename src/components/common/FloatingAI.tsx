@@ -64,7 +64,7 @@ export const FloatingAI: React.FC<FloatingAIProps> = ({
   const cozeToken = useMemo(() => import.meta.env.VITE_COZE_TOKEN as string | undefined, []);
   const cozeContainerRef = useRef<HTMLDivElement | null>(null);
   const cozeClientRef = useRef<any>(null);
-  const cozeClientConfigRef = useRef<{ botId: string; title: string } | null>(null);
+  const cozeClientConfigRef = useRef<{ botId: string; title: string; layout: 'pc' | 'mobile' } | null>(null);
 
   // 延迟显示 Tooltip
   useEffect(() => {
@@ -95,13 +95,19 @@ export const FloatingAI: React.FC<FloatingAIProps> = ({
         const container = cozeContainerRef.current;
         if (!container) return;
 
-        const nextConfig = { botId: cozeBotId, title: cozeTitle };
+        const layout: 'pc' | 'mobile' =
+          typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+            ? 'mobile'
+            : 'pc';
+
+        const nextConfig = { botId: cozeBotId, title: cozeTitle, layout };
         const prevConfig = cozeClientConfigRef.current;
         const shouldRecreate =
           !cozeClientRef.current ||
           !prevConfig ||
           prevConfig.botId !== nextConfig.botId ||
-          prevConfig.title !== nextConfig.title;
+          prevConfig.title !== nextConfig.title ||
+          prevConfig.layout !== nextConfig.layout;
 
         if (shouldRecreate) {
           try {
@@ -126,7 +132,8 @@ export const FloatingAI: React.FC<FloatingAIProps> = ({
             ui: {
               base: {
                 lang: 'zh-CN',
-                layout: 'pc',
+                layout: nextConfig.layout,
+                zIndex: 1000,
               },
               asstBtn: {
                 isNeed: false,
@@ -181,7 +188,7 @@ export const FloatingAI: React.FC<FloatingAIProps> = ({
             <X className="w-4 h-4" />
           </Button>
           
-          <div className="flex-1 bg-background relative">
+          <div className="flex-1 min-h-0 bg-background relative">
             {chatbotProvider === 'dify' ? (
               <iframe
                 src={chatUrl}
@@ -190,13 +197,15 @@ export const FloatingAI: React.FC<FloatingAIProps> = ({
                 title="Dify Chatbot"
               />
             ) : (
-              <div className="w-full h-full">
+              <div className="w-full h-full min-h-0">
                 {!cozeToken ? (
                   <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">
                     缺少 VITE_COZE_TOKEN
                   </div>
                 ) : (
-                  <div ref={cozeContainerRef} className="h-full w-full" />
+                  <div className="h-full w-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+                    <div ref={cozeContainerRef} className="min-h-full w-full" />
+                  </div>
                 )}
               </div>
             )}
