@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+export type ChatbotProvider = 'dify' | 'coze';
+
 interface SettingsState {
   siteName: string;
   siteDescription: string;
@@ -8,25 +10,35 @@ interface SettingsState {
   logoUrl: string | null;
   faviconUrl: string | null;
   difyChatbotEnabled: boolean;
+  chatbotProvider: ChatbotProvider;
+  cozeBotId: string;
+  cozeTitle: string;
   loading: boolean;
   loadSettings: () => Promise<void>;
   refreshSettings: () => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
-  siteName: '数据合规123导航',
+  siteName: '数据合规123',
   siteDescription: '专业的数据合规网站导航',
   siteKeywords: [],
-  footerText: '© 2025 数据合规123导航. All rights reserved.',
+  footerText: '© 2025 数据合规123. All rights reserved.',
   logoUrl: null,
   faviconUrl: null,
   difyChatbotEnabled: true,
+  chatbotProvider: 'dify',
+  cozeBotId: '7588114144168181801',
+  cozeTitle: 'Coze',
   loading: true,
 
   loadSettings: async () => {
     try {
       const { getSiteSettings } = await import('@/services/settingsService');
       const settings = await getSiteSettings();
+      const chatbotProvider =
+        settings.chatbot_provider === 'coze' || settings.chatbot_provider === 'dify'
+          ? (settings.chatbot_provider as ChatbotProvider)
+          : 'dify';
       set({
         siteName: (settings.site_name as string) || '数据合规123导航',
         siteDescription: (settings.site_description as string) || '专业的数据合规网站导航',
@@ -39,6 +51,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         logoUrl: (settings.logo_url as string) || null,
         faviconUrl: (settings.favicon_url as string) || null,
         difyChatbotEnabled: (settings.dify_chatbot_enabled as boolean) ?? true,
+        chatbotProvider,
+        cozeBotId: (settings.coze_bot_id as string) || '7588114144168181801',
+        cozeTitle: (settings.coze_title as string) || 'Coze',
         loading: false,
       });
     } catch (error) {

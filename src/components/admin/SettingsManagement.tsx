@@ -5,6 +5,13 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Save } from 'lucide-react';
 import { getSiteSettings, updateSiteSetting } from '@/db/api';
@@ -23,6 +30,9 @@ export default function SettingsManagement() {
     logo_url: '',
     favicon_url: '',
     dify_chatbot_enabled: true,
+    chatbot_provider: 'dify' as 'dify' | 'coze',
+    coze_bot_id: '7588114144168181801',
+    coze_title: 'Coze',
   });
   
   // 用于预览的本地状态
@@ -50,6 +60,10 @@ export default function SettingsManagement() {
       const logoUrl = (data.logo_url as string) || '';
       const faviconUrl = (data.favicon_url as string) || '';
       const difyChatbotEnabled = (data.dify_chatbot_enabled as boolean) ?? true;
+      const chatbotProvider =
+        data.chatbot_provider === 'coze' || data.chatbot_provider === 'dify'
+          ? (data.chatbot_provider as 'dify' | 'coze')
+          : 'dify';
       
       setSettings({
         site_name: (data.site_name as string) || '',
@@ -59,6 +73,9 @@ export default function SettingsManagement() {
         logo_url: logoUrl,
         favicon_url: faviconUrl,
         dify_chatbot_enabled: difyChatbotEnabled,
+        chatbot_provider: chatbotProvider,
+        coze_bot_id: (data.coze_bot_id as string) || '7588114144168181801',
+        coze_title: (data.coze_title as string) || 'Coze',
       });
       
       // 设置预览
@@ -151,6 +168,9 @@ export default function SettingsManagement() {
         updateSiteSetting('logo_url', settings.logo_url),
         updateSiteSetting('favicon_url', settings.favicon_url),
         updateSiteSetting('dify_chatbot_enabled', settings.dify_chatbot_enabled),
+        updateSiteSetting('chatbot_provider', settings.chatbot_provider),
+        updateSiteSetting('coze_bot_id', settings.coze_bot_id),
+        updateSiteSetting('coze_title', settings.coze_title),
       ]);
       
       // 保存成功后刷新设置，确保所有组件能获取到最新数据
@@ -233,8 +253,51 @@ export default function SettingsManagement() {
               setSettings({ ...settings, dify_chatbot_enabled: checked })
             }
           />
-          <Label htmlFor="dify_chatbot_enabled">启用 Dify Chatbot</Label>
+          <Label htmlFor="dify_chatbot_enabled">启用 Chatbot</Label>
         </div>
+
+        {settings.dify_chatbot_enabled && (
+          <div className="space-y-4 rounded-2xl border border-border/50 bg-background/60 p-4 backdrop-blur-xl">
+            <div className="space-y-2">
+              <Label>Chatbot 类型</Label>
+              <Select
+                value={settings.chatbot_provider}
+                onValueChange={(value) =>
+                  setSettings({ ...settings, chatbot_provider: value as 'dify' | 'coze' })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="请选择" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dify">Dify</SelectItem>
+                  <SelectItem value="coze">Coze</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {settings.chatbot_provider === 'coze' && (
+              <div className="space-y-4 rounded-xl border border-border/50 bg-background/70 p-4">
+                <div className="space-y-2">
+                  <Label htmlFor="coze_bot_id">Coze Bot ID</Label>
+                  <Input
+                    id="coze_bot_id"
+                    value={settings.coze_bot_id}
+                    onChange={(e) => setSettings({ ...settings, coze_bot_id: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="coze_title">Coze 标题</Label>
+                  <Input
+                    id="coze_title"
+                    value={settings.coze_title}
+                    onChange={(e) => setSettings({ ...settings, coze_title: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Logo 上传 */}
         <div className="space-y-2">

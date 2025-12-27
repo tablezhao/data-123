@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bot, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,44 @@ interface FloatingAIProps {
   chatUrl?: string;
 }
 
+declare global {
+  interface Window {
+    CozeWebSDK?: {
+      WebChatClient: new (options: any) => any;
+    };
+  }
+}
+
+let cozeSdkLoadPromise: Promise<void> | null = null;
+const COZE_SDK_SRC =
+  'https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.19/libs/cn/index.js';
+
+function loadCozeSdk(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (window.CozeWebSDK?.WebChatClient) return Promise.resolve();
+  if (cozeSdkLoadPromise) return cozeSdkLoadPromise;
+
+  cozeSdkLoadPromise = new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[data-coze-websdk="true"]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', () => reject(new Error('Coze SDK 加载失败')));
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = COZE_SDK_SRC;
+    script.async = true;
+    script.defer = true;
+    script.dataset.cozeWebsdk = 'true';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Coze SDK 加载失败'));
+    document.head.appendChild(script);
+  });
+
+  return cozeSdkLoadPromise;
+}
+
 export const FloatingAI: React.FC<FloatingAIProps> = ({ 
   // 使用用户提供的 URL，优先使用环境变量
   chatUrl = import.meta.env.VITE_DIFY_CHAT_URL || "https://udify.app/chatbot/nqOzNPC7ONM2yD8g" 
@@ -20,6 +58,13 @@ export const FloatingAI: React.FC<FloatingAIProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const difyChatbotEnabled = useSettingsStore((state) => state.difyChatbotEnabled);
+  const chatbotProvider = useSettingsStore((state) => state.chatbotProvider);
+  const cozeBotId = useSettingsStore((state) => state.cozeBotId);
+  const cozeTitle = useSettingsStore((state) => state.cozeTitle);
+  const cozeToken = useMemo(() => import.meta.env.VITE_COZE_TOKEN as string | undefined, []);
+  const cozeContainerRef = useRef<HTMLDivElement | null>(null);
+  const cozeClientRef = useRef<any>(null);
+  const cozeClientConfigRef = useRef<{ botId: string; title: string } | null>(null);
 
   // 延迟显示 Tooltip
   useEffect(() => {
@@ -31,6 +76,84 @@ export const FloatingAI: React.FC<FloatingAIProps> = ({
     }
     return () => clearTimeout(timer);
   }, [isHovered, isOpen]);
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [chatbotProvider]);
+
+  useEffect(() => {
+    if (!difyChatbotEnabled || chatbotProvider !== 'coze') return;
+    if (!cozeToken) return;
+
+    let cancelled = false;
+
+    const ensureCoze = async () => {
+      try {
+        await loadCozeSdk();
+        if (cancelled) return;
+
+        const container = cozeContainerRef.current;
+        if (!container) return;
+
+        const nextConfig = { botId: cozeBotId, title: cozeTitle };
+        const prevConfig = cozeClientConfigRef.current;
+        const shouldRecreate =
+          !cozeClientRef.current ||
+          !prevConfig ||
+          prevConfig.botId !== nextConfig.botId ||
+          prevConfig.title !== nextConfig.title;
+
+        if (shouldRecreate) {
+          try {
+            cozeClientRef.current?.destroy?.();
+          } catch {
+          }
+          container.replaceChildren();
+          cozeClientRef.current = new window.CozeWebSDK!.WebChatClient({
+            config: {
+              type: 'bot',
+              bot_id: cozeBotId,
+              isIframe: false,
+            },
+            componentProps: {
+              title: cozeTitle,
+            },
+            auth: {
+              type: 'token',
+              token: cozeToken,
+              onRefreshToken: async () => cozeToken,
+            },
+            ui: {
+              base: {
+                lang: 'zh-CN',
+                layout: 'pc',
+              },
+              asstBtn: {
+                isNeed: false,
+              },
+              chatBot: {
+                el: container,
+              },
+            },
+          });
+          cozeClientConfigRef.current = nextConfig;
+        }
+
+        if (isOpen) {
+          cozeClientRef.current?.showChatBot?.();
+        } else {
+          cozeClientRef.current?.hideChatBot?.();
+        }
+      } catch {
+      }
+    };
+
+    ensureCoze();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chatbotProvider, difyChatbotEnabled, cozeBotId, cozeTitle, cozeToken, isOpen]);
 
   if (!difyChatbotEnabled) {
     return null;
@@ -58,14 +181,25 @@ export const FloatingAI: React.FC<FloatingAIProps> = ({
             <X className="w-4 h-4" />
           </Button>
           
-          {/* iframe 容器 */}
           <div className="flex-1 bg-background relative">
-             <iframe
-               src={chatUrl}
-               className="w-full h-full border-0"
-               allow="microphone" // 允许语音输入
-               title="Dify Chatbot"
-             />
+            {chatbotProvider === 'dify' ? (
+              <iframe
+                src={chatUrl}
+                className="w-full h-full border-0"
+                allow="microphone"
+                title="Dify Chatbot"
+              />
+            ) : (
+              <div className="w-full h-full">
+                {!cozeToken ? (
+                  <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">
+                    缺少 VITE_COZE_TOKEN
+                  </div>
+                ) : (
+                  <div ref={cozeContainerRef} className="h-full w-full" />
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
