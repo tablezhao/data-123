@@ -12,8 +12,8 @@ interface FloatingAIProps {
 }
 
 export const FloatingAI: React.FC<FloatingAIProps> = ({ 
-  // 使用用户提供的 URL
-  chatUrl = "https://udify.app/chatbot/nqOzNPC7ONM2yD8g" 
+  // 使用用户提供的 URL，优先使用环境变量
+  chatUrl = import.meta.env.VITE_DIFY_CHAT_URL || "https://udify.app/chatbot/nqOzNPC7ONM2yD8g" 
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -41,7 +41,7 @@ export const FloatingAI: React.FC<FloatingAIProps> = ({
             : "opacity-0 scale-90 translate-y-4 pointer-events-none"
         )}
       >
-        <div className="w-[380px] h-[600px] max-w-[calc(100vw-48px)] max-h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-2xl border border-border/50 bg-background/95 backdrop-blur-xl flex flex-col relative">
+        <div className="w-[calc(100vw-32px)] md:w-[500px] lg:w-[600px] h-[calc(100vh-100px)] md:h-[700px] max-h-[calc(100vh-100px)] rounded-2xl overflow-hidden shadow-2xl border border-border/50 bg-background/95 backdrop-blur-xl flex flex-col relative">
           {/* 关闭按钮 - 悬浮在右上角 */}
           <Button 
             variant="ghost" 
