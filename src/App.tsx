@@ -1,9 +1,10 @@
-import React, { Suspense, useEffect, useState, lazy } from 'react';
+import React, { Suspense, useEffect, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from 'next-themes';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { FaviconManager } from '@/components/common/FaviconManager';
+import { FloatingAI } from '@/components/common/FloatingAI';
 import routes, { usePreloadRoutes } from './routes';
 
 // 懒加载 Toaster 组件，避免阻塞首屏
@@ -36,20 +37,7 @@ const PageLoadingIndicator = () => (
   </div>
 );
 
-// 简化的应用加载指示器
-const AppLoadingIndicator = () => (
-  <div className="flex items-center justify-center min-h-screen bg-background">
-    <div className="text-center">
-      <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-primary text-primary-foreground rounded-full animate-pulse">
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      </div>
-      <h2 className="text-xl font-semibold text-foreground">加载中...</h2>
-      <p className="text-sm text-muted-foreground mt-1">正在准备您的应用</p>
-    </div>
-  </div>
-);
+
 
 const App: React.FC = () => {
   // 使用路由预加载钩子
@@ -95,6 +83,7 @@ const App: React.FC = () => {
               </Suspense>
             </main>
           </div>
+          <FloatingAI />
           <Suspense fallback={null}>
             <Toaster />
           </Suspense>
